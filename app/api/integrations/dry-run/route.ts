@@ -4,6 +4,11 @@ import { z } from "zod";
 import { requireRoleAndWorkspaceFromRequest, requireWave1 } from "@/lib/api-guards";
 import { getAppConfig } from "@/lib/config";
 import { enqueueIntegrationExecution } from "@/lib/jobQueue";
+import {
+  JsonBodyParseError,
+  JsonBodyTooLargeError,
+  readJsonBodyWithLimit,
+} from "@/lib/request-body";
 
 const BodySchema = z
   .object({
@@ -34,7 +39,34 @@ export async function POST(request: Request) {
     return denied;
   }
 
-  const raw = (await request.json().catch(() => null)) as unknown;
+  let raw: unknown;
+  try {
+    raw = await readJsonBodyWithLimit(request, 24_000);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          detailsCode:
+            error instanceof JsonBodyTooLargeError
+              ? "INTEGRATION_DRY_RUN_PAYLOAD_TOO_LARGE"
+              : "INTEGRATION_DRY_RUN_BAD_JSON",
+          message:
+            error instanceof JsonBodyTooLargeError
+              ? error.message
+              : error instanceof JsonBodyParseError
+                ? error.message
+                : "Invalid integration request payload.",
+          requestId,
+        },
+      },
+      {
+        status: error instanceof JsonBodyTooLargeError ? 413 : 400,
+        headers: { "x-correlation-id": correlationId },
+      },
+    );
+  }
+
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(

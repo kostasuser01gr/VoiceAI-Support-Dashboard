@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import { AppNav } from "@/components/app-nav";
+import { Badge, Button, Card, Input, Toast } from "@/components/ui/primitives";
 import {
   getLocalHistoryServerSnapshot,
   getLocalHistorySnapshot,
@@ -136,53 +137,40 @@ export default function HistoryComparePage() {
                 Compare two sessions for summary, action, topic, urgency, and verifier deltas.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Link
-                href="/history"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                History
-              </Link>
-              <Link
-                href="/"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Dashboard
-              </Link>
-            </div>
+            <AppNav current="history" />
           </div>
           <div className="mt-4 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-            <input
+            <Input
               value={idA}
               onChange={(event) => setIdA(event.target.value)}
               placeholder="Session ID A"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
             />
-            <input
+            <Input
               value={idB}
               onChange={(event) => setIdB(event.target.value)}
               placeholder="Session ID B"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
             />
-            <button
-              type="button"
+            <Button
+              variant="primary"
               onClick={runCompare}
               disabled={loading}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
               Compare
-            </button>
+            </Button>
+          </div>
+          <div className="mt-3">
+            <Badge tone="neutral">Mode: {historyMode}</Badge>
           </div>
         </header>
 
         {error && (
-          <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+          <Toast tone="danger">
             {error}
-          </div>
+          </Toast>
         )}
 
         {result && (
-          <section className="rounded-2xl border border-white/60 bg-white/85 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+          <Card className="rounded-2xl border border-white/60 bg-white/85 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
             <h2 className="text-lg font-semibold">Comparison Result</h2>
             <dl className="mt-3 grid gap-2 text-sm md:grid-cols-2">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -214,10 +202,9 @@ export default function HistoryComparePage() {
                 </dd>
               </div>
             </dl>
-          </section>
+          </Card>
         )}
       </div>
     </div>
   );
 }
-

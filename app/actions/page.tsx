@@ -3,6 +3,16 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import { AppNav } from "@/components/app-nav";
+import {
+  Badge,
+  Button,
+  Card,
+  Dropdown,
+  Input,
+  Tabs,
+  Tooltip,
+} from "@/components/ui/primitives";
 import {
   getLocalHistoryServerSnapshot,
   getLocalHistorySnapshot,
@@ -62,6 +72,7 @@ export default function ActionsPage() {
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all">("pending");
   const [rows, setRows] = useState<ActionBoardRow[]>([]);
   const [error, setError] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const historyMode = health?.diagnostics.historyMode ?? "local";
 
@@ -199,6 +210,69 @@ export default function ActionsPage() {
     return matchStatus && matchSearch;
   });
 
+  useEffect(() => {
+    setSelectedIds((current) =>
+      current.filter((id) => filteredRows.some((row) => row.id === id)),
+    );
+  }, [filteredRows]);
+
+  const groupedCounts = useMemo(() => {
+    return filteredRows.reduce(
+      (acc, row) => {
+        const status = toReviewStatus(row.review);
+        acc[status] += 1;
+        return acc;
+      },
+      {
+        pending: 0,
+        approved: 0,
+        executed: 0,
+      } as Record<ReviewStatus, number>,
+    );
+  }, [filteredRows]);
+
+  const allVisibleSelected =
+    filteredRows.length > 0 &&
+    filteredRows.every((row) => selectedIds.includes(row.id));
+
+  const selectedRows = filteredRows.filter((row) => selectedIds.includes(row.id));
+
+  const toggleSelection = (id: string, next: boolean) => {
+    setSelectedIds((current) => {
+      if (next) {
+        return [...new Set([...current, id])];
+      }
+      return current.filter((item) => item !== id);
+    });
+  };
+
+  const toggleSelectAll = (next: boolean) => {
+    if (!next) {
+      setSelectedIds((current) =>
+        current.filter((id) => !filteredRows.some((row) => row.id === id)),
+      );
+      return;
+    }
+    setSelectedIds((current) => [
+      ...new Set([...current, ...filteredRows.map((row) => row.id)]),
+    ]);
+  };
+
+  const copySelection = async () => {
+    if (!selectedRows.length || typeof window === "undefined") {
+      return;
+    }
+
+    const payload = selectedRows.map((row) => ({
+      id: row.id,
+      createdAt: row.createdAt,
+      status: toReviewStatus(row.review),
+      actionCount: row.actionCount,
+      summarySnippet: row.summarySnippet,
+    }));
+    await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+  };
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d9f5ff_0%,#f5f9ff_35%,#f7f6ff_60%,#ffffff_100%)] px-4 py-6 text-slate-900 md:px-8">
       <div className="mx-auto max-w-6xl space-y-5">
@@ -210,46 +284,60 @@ export default function ActionsPage() {
                 Execution is blocked until tasks + email are approved.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Link
-                href="/"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/history"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                History
-              </Link>
-              <Link
-                href="/open-loops"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Open Loops
-              </Link>
-            </div>
+            <AppNav current="actions" />
           </div>
           <div className="mt-4 grid gap-2 md:grid-cols-[1fr_180px]">
-            <input
+            <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by summary or id"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
             />
-            <select
+            <Dropdown
               value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as ReviewStatus | "all")
+              onChange={(value) => setStatusFilter(value as ReviewStatus | "all")}
+              options={[
+                { value: "pending", label: "Pending" },
+                { value: "approved", label: "Approved" },
+                { value: "executed", label: "Executed" },
+                { value: "all", label: "All" },
+              ]}
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <Tabs
+              value={statusFilter}
+              onChange={(value) =>
+                setStatusFilter(value as ReviewStatus | "all")
               }
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
-            >
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="executed">Executed</option>
-              <option value="all">All</option>
-            </select>
+              tabs={[
+                { value: "pending", label: "Pending", count: groupedCounts.pending },
+                { value: "approved", label: "Approved", count: groupedCounts.approved },
+                { value: "executed", label: "Executed", count: groupedCounts.executed },
+                { value: "all", label: "All", count: filteredRows.length },
+              ]}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Tooltip label="Copy selected rows JSON for external review">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={!selectedRows.length}
+                  onClick={copySelection}
+                >
+                  Bulk export
+                </Button>
+              </Tooltip>
+              <Link href="/history/compare">
+                <Button variant="secondary" size="sm">
+                  Compare
+                </Button>
+              </Link>
+              <Link href="/open-loops">
+                <Button variant="secondary" size="sm">
+                  Open loops
+                </Button>
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -259,10 +347,27 @@ export default function ActionsPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-2xl border border-white/60 bg-white/85 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+        <Card className="space-y-3 p-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 text-xs text-slate-600">
+            <p>
+              Grouped by review status with timestamped reviewer events and bulk export.
+            </p>
+            <Badge tone={selectedRows.length ? "info" : "neutral"}>
+              Selected: {selectedRows.length}
+            </Badge>
+          </div>
+          <div className="overflow-x-auto rounded-b-2xl">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-100 text-slate-700">
               <tr>
+                <th className="px-4 py-3 font-semibold">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={(event) => toggleSelectAll(event.target.checked)}
+                    aria-label="Select all visible sessions"
+                  />
+                </th>
                 <th className="px-4 py-3 font-semibold">Timestamp</th>
                 <th className="px-4 py-3 font-semibold">Mode</th>
                 <th className="px-4 py-3 font-semibold">Summary</th>
@@ -279,21 +384,32 @@ export default function ActionsPage() {
                   const status = toReviewStatus(row.review);
                   return (
                     <tr key={row.id} className="border-t border-slate-200">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(row.id)}
+                          onChange={(event) => toggleSelection(row.id, event.target.checked)}
+                          aria-label={`Select ${row.id}`}
+                        />
+                      </td>
                       <td className="px-4 py-3">{formatTs(row.createdAt)}</td>
                       <td className="px-4 py-3 uppercase">{row.inputMode}</td>
                       <td className="max-w-md truncate px-4 py-3">{row.summarySnippet}</td>
                       <td className="px-4 py-3">{row.actionCount}</td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                            status === "executed"
-                              ? "bg-slate-100 text-slate-700"
-                              : status === "approved"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
+                        <span className="inline-flex items-center gap-2">
+                          <span className="text-xs text-slate-500">group:</span>
+                          <Badge
+                            tone={
+                              status === "executed"
+                                ? "neutral"
+                                : status === "approved"
+                                  ? "success"
+                                  : "warning"
+                            }
+                          >
                           {status}
+                          </Badge>
                         </span>
                       </td>
                       <td className="max-w-xs truncate px-4 py-3 text-xs text-slate-600">
@@ -315,7 +431,7 @@ export default function ActionsPage() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
                     No action rows found for this filter.
                   </td>
                 </tr>
@@ -323,6 +439,7 @@ export default function ActionsPage() {
             </tbody>
           </table>
         </div>
+        </Card>
       </div>
     </div>
   );

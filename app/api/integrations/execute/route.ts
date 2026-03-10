@@ -17,6 +17,11 @@ import {
 } from "@/lib/idempotency";
 import { enqueueIntegrationExecution } from "@/lib/jobQueue";
 import { logServerEvent } from "@/lib/observability";
+import {
+  JsonBodyParseError,
+  JsonBodyTooLargeError,
+  readJsonBodyWithLimit,
+} from "@/lib/request-body";
 import { makeApprovalEvent } from "@/lib/session-meta";
 
 const BodySchema = z
@@ -50,7 +55,34 @@ export async function POST(request: Request) {
     return denied;
   }
 
-  const raw = (await request.json().catch(() => null)) as unknown;
+  let raw: unknown;
+  try {
+    raw = await readJsonBodyWithLimit(request, 32_000);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          detailsCode:
+            error instanceof JsonBodyTooLargeError
+              ? "INTEGRATION_EXECUTE_PAYLOAD_TOO_LARGE"
+              : "INTEGRATION_EXECUTE_BAD_JSON",
+          message:
+            error instanceof JsonBodyTooLargeError
+              ? error.message
+              : error instanceof JsonBodyParseError
+                ? error.message
+                : "Invalid integration execute payload.",
+          requestId,
+        },
+      },
+      {
+        status: error instanceof JsonBodyTooLargeError ? 413 : 400,
+        headers: { "x-correlation-id": correlationId },
+      },
+    );
+  }
+
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(

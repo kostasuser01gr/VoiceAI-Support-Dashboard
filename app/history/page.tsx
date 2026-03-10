@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import { AppNav } from "@/components/app-nav";
+import { Badge, Button, Card, Input, Select } from "@/components/ui/primitives";
 import {
   clearAllLocalSessions,
   getLocalHistoryServerSnapshot,
@@ -157,74 +159,56 @@ export default function HistoryPage() {
                   : "Local browser sessions (last 25)"}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href="/"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/settings"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Settings
-              </Link>
-              <Link
-                href="/actions"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Actions
-              </Link>
-              <Link
-                href="/history/compare"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Compare
-              </Link>
-              <Link
-                href="/open-loops"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Open Loops
-              </Link>
-            </div>
+            <AppNav current="history" />
           </div>
 
           <div className="mt-4 grid gap-2 md:grid-cols-[1fr_170px_220px]">
-            <input
+            <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search summary or ID"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
             />
-            <select
+            <Select
               value={modeFilter}
               onChange={(event) =>
                 setModeFilter(event.target.value as "all" | "voice" | "text")
               }
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
             >
               <option value="all">All modes</option>
               <option value="voice">Voice</option>
               <option value="text">Text</option>
-            </select>
-            <input
+            </Select>
+            <Input
               value={workspaceFilter}
               onChange={(event) => setWorkspaceFilter(event.target.value)}
               placeholder="Workspace ID"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
             />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={isDbMode ? "info" : "neutral"}>
+                Source: {isDbMode ? "db" : "local"}
+              </Badge>
+              <Badge tone="neutral">Rows: {rows.length}</Badge>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/history/compare">
+                <Button variant="secondary" size="sm">
+                  Compare
+                </Button>
+              </Link>
+              <Link href="/open-loops">
+                <Button variant="secondary" size="sm">
+                  Open loops
+                </Button>
+              </Link>
+            </div>
           </div>
           {!isDbMode && (
             <div className="mt-2">
-              <button
-                type="button"
-                onClick={clearAllLocalSessions}
-                className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700"
-              >
+              <Button variant="danger" size="sm" onClick={clearAllLocalSessions}>
                 Clear local history
-              </button>
+              </Button>
             </div>
           )}
         </header>
@@ -235,7 +219,7 @@ export default function HistoryPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-2xl border border-white/60 bg-white/85 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+        <Card className="overflow-x-auto rounded-2xl border border-white/60 bg-white/85 p-0 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-100 text-slate-700">
               <tr>
@@ -293,14 +277,14 @@ export default function HistoryPage() {
                               onClick={() =>
                                 updateLocalSession(row.id, { pinned: !row.pinned })
                               }
-                              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900"
+                              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1"
                             >
                               {row.pinned ? "Unpin" : "Pin"}
                             </button>
                             <button
                               type="button"
                               onClick={() => removeLocalSession(row.id)}
-                              className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-800"
+                              className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1"
                             >
                               Delete
                             </button>
@@ -319,7 +303,7 @@ export default function HistoryPage() {
               )}
             </tbody>
           </table>
-        </div>
+        </Card>
       </div>
     </div>
   );

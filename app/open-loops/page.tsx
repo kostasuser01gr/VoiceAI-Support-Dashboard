@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import { AppNav } from "@/components/app-nav";
+import { Badge, Card } from "@/components/ui/primitives";
 import {
   getLocalHistoryServerSnapshot,
   getLocalHistorySnapshot,
@@ -130,20 +131,10 @@ export default function OpenLoopsPage() {
                 Unresolved task loops derived from session history.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Link
-                href="/"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/history"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                History
-              </Link>
-            </div>
+            <AppNav />
+          </div>
+          <div className="mt-3">
+            <Badge tone="neutral">Loops: {loops.length}</Badge>
           </div>
         </header>
 
@@ -158,7 +149,7 @@ export default function OpenLoopsPage() {
             Loading open loops...
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-white/60 bg-white/85 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+          <Card className="overflow-x-auto rounded-2xl border border-white/60 bg-white/85 p-0 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-100 text-slate-700">
                 <tr>
@@ -179,12 +170,12 @@ export default function OpenLoopsPage() {
                       <td className="px-4 py-3 uppercase">{item.urgency}</td>
                       <td className="max-w-xl truncate px-4 py-3">{item.task}</td>
                       <td className="px-4 py-3">
-                        <Link
+                        <a
                           href={`/history/${item.sessionId}`}
                           className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-900"
                         >
                           Open
-                        </Link>
+                        </a>
                       </td>
                     </tr>
                   ))
@@ -197,10 +188,9 @@ export default function OpenLoopsPage() {
                 )}
               </tbody>
             </table>
-          </div>
+          </Card>
         )}
       </div>
     </div>
   );
 }
-

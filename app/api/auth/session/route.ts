@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { clearServerSession, getServerSession, setServerSession } from "@/lib/auth";
+import {
+  JsonBodyParseError,
+  JsonBodyTooLargeError,
+  readJsonBodyWithLimit,
+} from "@/lib/request-body";
 
 const UpdateSessionSchema = z
   .object({
@@ -20,7 +25,26 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const payload = (await request.json().catch(() => null)) as unknown;
+  let payload: unknown;
+  try {
+    payload = await readJsonBodyWithLimit(request, 8_000);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message:
+            error instanceof JsonBodyTooLargeError
+              ? error.message
+              : error instanceof JsonBodyParseError
+                ? error.message
+                : "Invalid session payload.",
+        },
+      },
+      { status: error instanceof JsonBodyTooLargeError ? 413 : 400 },
+    );
+  }
+
   const parsed = UpdateSessionSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json(

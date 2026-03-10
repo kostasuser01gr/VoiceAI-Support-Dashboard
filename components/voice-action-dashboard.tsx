@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
+import { AppNav } from "@/components/app-nav";
+import { Badge, Button, Card, Dialog } from "@/components/ui/primitives";
 import { buildJsonExport, buildMarkdownExport, buildTextExport } from "@/lib/export";
 import {
   getLocalHistoryServerSnapshot,
@@ -855,6 +857,13 @@ export function VoiceActionDashboard({
       ? `${localHistory.length} local session${localHistory.length > 1 ? "s" : ""} in ${userSettings.workspaceId}`
       : "No local sessions yet";
 
+  const observability = health?.diagnostics.observability;
+  const guardian = health?.diagnostics.guardian;
+  const pendingApprovals =
+    Number(!review.emailApproved) + Number(!review.tasksApproved);
+  const openLoopsCount = analysis.index.openLoopsCount;
+  const latestSessionId = localHistory[0]?.id;
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d9f5ff_0%,#f5f9ff_35%,#f7f6ff_60%,#ffffff_100%)] px-4 py-6 text-slate-900 md:px-8">
       <div className="mx-auto max-w-7xl">
@@ -864,7 +873,7 @@ export function VoiceActionDashboard({
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">
                 Voice to Action Agent
               </p>
-              <h1 className="mt-1 text-3xl font-semibold">voice-to-action-agent</h1>
+              <h1 className="mt-1 text-3xl font-semibold">Command Center</h1>
               <p className="mt-1 text-sm text-slate-600">{latestSessionText}</p>
               <p className="mt-1 text-xs text-slate-500">
                 {sessionIdentity.name} ({sessionIdentity.role}) · {sessionIdentity.email}
@@ -881,57 +890,26 @@ export function VoiceActionDashboard({
               >
                 {localizedStatus}
               </span>
-              <button
-                type="button"
+              <Button
+                id="command-run"
+                variant="primary"
                 onClick={() => processInput(inputMode)}
                 disabled={processingDisabled}
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
               >
                 {t(language, "process")}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => setIsExportOpen(true)}
                 disabled={!result}
-                className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-900 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
               >
                 {t(language, "export")}
-              </button>
-              <Link
-                href="/history"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                {t(language, "history")}
-              </Link>
-              <Link
-                href="/settings"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                {t(language, "settings")}
-              </Link>
-              <Link
-                href="/integrations"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                {t(language, "integrations")}
-              </Link>
-              <Link
-                href="/actions"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Actions
-              </Link>
-              <Link
-                href="/open-loops"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Open Loops
-              </Link>
-              <Link
-                href="/status"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Status
+              </Button>
+              <AppNav current="dashboard" />
+              <Link href="/open-loops">
+                <Button variant="secondary" size="sm">
+                  Open Loops
+                </Button>
               </Link>
             </div>
           </div>
@@ -955,6 +933,94 @@ export function VoiceActionDashboard({
             {errorMessage}
           </div>
         )}
+
+        <Card className="mb-5 rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold">Quick Actions</h2>
+              <p className="text-sm text-slate-600">
+                Fast path for processing, comparison, export, and regeneration.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="primary" onClick={() => processInput(inputMode)}>
+                Run process
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  if (!latestSessionId) {
+                    showToast("error", "No local session available.");
+                    return;
+                  }
+                  window.location.assign(`/history/${latestSessionId}`);
+                }}
+              >
+                Open latest session
+              </Button>
+              <Button variant="secondary" onClick={() => setIsExportOpen(true)} disabled={!result}>
+                Export
+              </Button>
+              <Link href="/history/compare">
+                <Button variant="secondary">Compare</Button>
+              </Link>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  if (!latestSessionId) {
+                    showToast("error", "No local session to regenerate.");
+                    return;
+                  }
+                  window.location.assign(`/?from=${latestSessionId}`);
+                }}
+              >
+                Regenerate
+              </Button>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">Sessions processed</p>
+              <p className="text-xl font-semibold text-slate-900">
+                {observability?.processRequests ?? 0}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">Pending approvals</p>
+              <p className="text-xl font-semibold text-slate-900">{pendingApprovals}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">Open loops</p>
+              <p className="text-xl font-semibold text-slate-900">{openLoopsCount}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">Guardian blocks</p>
+              <p className="text-xl font-semibold text-slate-900">
+                {guardian?.security.blockedClients ?? 0}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">P50 latency</p>
+              <p className="text-xl font-semibold text-slate-900">
+                {observability?.p50LatencyMs ?? 0}ms
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">P95 latency</p>
+              <p className="text-xl font-semibold text-slate-900">
+                {observability?.p95LatencyMs ?? 0}ms
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge tone={guardian?.status === "critical" ? "danger" : guardian?.status === "degraded" ? "warning" : "success"}>
+              Guardian: {guardian?.status ?? "unknown"}
+            </Badge>
+            <Badge tone="neutral">
+              Success rate: {Math.round((observability?.successRate ?? 0) * 100)}%
+            </Badge>
+          </div>
+        </Card>
 
         <div className="grid gap-6 lg:grid-cols-[1.08fr_1fr]">
           <section className="space-y-4 rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -1363,129 +1429,117 @@ export function VoiceActionDashboard({
         </div>
       </div>
 
-      {isExportOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Export Center</h2>
-              <button
-                type="button"
-                onClick={() => setIsExportOpen(false)}
-                className="rounded-lg border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-700"
-              >
-                Close
-              </button>
-            </div>
-            <p className="mb-4 text-sm text-slate-600">
-              Export data from the latest processed session. Sensitive server secrets are never included.
-            </p>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <button
-                type="button"
-                disabled={!result}
-                onClick={() => copyText("Markdown", markdownExport)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                Copy Markdown
-              </button>
-              <button
-                type="button"
-                disabled={!result}
-                onClick={() => copyText("JSON", jsonExport)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                Copy JSON
-              </button>
-              <button
-                type="button"
-                disabled={!result}
-                onClick={() => copyText("Text", textExport)}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                Copy Text
-              </button>
-              <button
-                type="button"
-                disabled={!result}
-                onClick={() =>
-                  downloadFile("voice-to-action-export.md", markdownExport, "text/markdown")
-                }
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                Download .md
-              </button>
-              <button
-                type="button"
-                disabled={!result}
-                onClick={() =>
-                  downloadFile(
-                    "voice-to-action-export.json",
-                    jsonExport,
-                    "application/json",
-                  )
-                }
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                Download .json
-              </button>
-              <button
-                type="button"
-                disabled={!result}
-                onClick={() => downloadFile("voice-to-action-export.txt", textExport, "text/plain")}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                Download .txt
-              </button>
-              <button
-                type="button"
-                disabled={!result}
-                onClick={openPrintView}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                Print to PDF
-              </button>
-              <button
-                type="button"
-                disabled={!result}
-                onClick={generateShareLink}
-                className="rounded-xl border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-900 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                Generate share link
-              </button>
-            </div>
-            <div className="mt-3 space-y-2">
-              <p className="text-xs text-slate-500">
-                Signed share links are demo-safe and do not include secrets.
-              </p>
-              <input
-                value={shareUrl}
-                readOnly
-                placeholder="Share URL appears here"
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs"
-              />
-              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                <input
-                  value={webhookUrl}
-                  onChange={(event) => setWebhookUrl(event.target.value)}
-                  placeholder="https://example.com/webhook"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
-                />
-                <button
-                  type="button"
-                  disabled={!result}
-                  onClick={sendWebhook}
-                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-900 disabled:cursor-not-allowed disabled:text-slate-400"
-                >
-                  Send webhook
-                </button>
-              </div>
-              {webhookStatus && (
-                <p className="text-xs text-slate-600">{webhookStatus}</p>
-              )}
-            </div>
-          </div>
+      <Dialog
+        open={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        title="Export Center"
+        description="Export data from the latest processed session. Sensitive secrets are never included."
+      >
+        <div className="grid gap-2 sm:grid-cols-3">
+          <button
+            type="button"
+            disabled={!result}
+            onClick={() => copyText("Markdown", markdownExport)}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Copy Markdown
+          </button>
+          <button
+            type="button"
+            disabled={!result}
+            onClick={() => copyText("JSON", jsonExport)}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Copy JSON
+          </button>
+          <button
+            type="button"
+            disabled={!result}
+            onClick={() => copyText("Text", textExport)}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Copy Text
+          </button>
+          <button
+            type="button"
+            disabled={!result}
+            onClick={() =>
+              downloadFile("voice-to-action-export.md", markdownExport, "text/markdown")
+            }
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Download .md
+          </button>
+          <button
+            type="button"
+            disabled={!result}
+            onClick={() =>
+              downloadFile(
+                "voice-to-action-export.json",
+                jsonExport,
+                "application/json",
+              )
+            }
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Download .json
+          </button>
+          <button
+            type="button"
+            disabled={!result}
+            onClick={() => downloadFile("voice-to-action-export.txt", textExport, "text/plain")}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Download .txt
+          </button>
+          <button
+            type="button"
+            disabled={!result}
+            onClick={openPrintView}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Print to PDF
+          </button>
+          <button
+            type="button"
+            disabled={!result}
+            onClick={generateShareLink}
+            className="rounded-xl border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-900 disabled:cursor-not-allowed disabled:text-slate-400"
+          >
+            Generate share link
+          </button>
         </div>
-      )}
+        <div className="mt-3 space-y-2">
+          <p className="text-xs text-slate-500">
+            Signed share links are demo-safe and do not include secrets.
+          </p>
+          <input
+            value={shareUrl}
+            readOnly
+            placeholder="Share URL appears here"
+            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs"
+          />
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <input
+              value={webhookUrl}
+              onChange={(event) => setWebhookUrl(event.target.value)}
+              placeholder="https://example.com/webhook"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+            />
+            <button
+              type="button"
+              disabled={!result}
+              onClick={sendWebhook}
+              className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-900 disabled:cursor-not-allowed disabled:text-slate-400"
+            >
+              Send webhook
+            </button>
+          </div>
+          {webhookStatus && (
+            <p className="text-xs text-slate-600">{webhookStatus}</p>
+          )}
+        </div>
+      </Dialog>
 
       {toast && (
         <div className="fixed bottom-5 right-5 z-50">

@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { applySecurityHeaders, isMutatingMethod, isSameOriginRequest } from "@/lib/http-security";
+
 type SessionRole = "owner" | "admin" | "agent" | "viewer";
 
 type SessionData = {
@@ -44,6 +46,32 @@ function safeEncode(session: SessionData) {
 }
 
 export function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith("/api/") && isMutatingMethod(request.method)) {
+    const csrfAllowed = isSameOriginRequest({
+      originHeader: request.headers.get("origin"),
+      hostHeader: request.headers.get("host"),
+      forwardedHostHeader: request.headers.get("x-forwarded-host"),
+      forwardedProtoHeader: request.headers.get("x-forwarded-proto"),
+    });
+
+    if (!csrfAllowed) {
+      const blocked = NextResponse.json(
+        {
+          error: {
+            code: "CSRF_BLOCKED",
+            detailsCode: "ORIGIN_MISMATCH",
+            message: "Mutating API request blocked by CSRF policy.",
+            requestId: crypto.randomUUID(),
+          },
+        },
+        { status: 403 },
+      );
+      applySecurityHeaders(blocked.headers);
+      return blocked;
+    }
+  }
+
   const existing = request.cookies.get(SESSION_COOKIE)?.value;
   const session = safeDecode(existing) ?? DEFAULT_SESSION;
 
@@ -75,6 +103,7 @@ export function proxy(request: NextRequest) {
     });
   }
 
+  applySecurityHeaders(response.headers);
   return response;
 }
 
@@ -83,4 +112,3 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
-

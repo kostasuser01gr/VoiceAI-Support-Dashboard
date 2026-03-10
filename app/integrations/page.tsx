@@ -1,7 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+
+import { AppNav } from "@/components/app-nav";
+import { Button, Card, Input, Toast } from "@/components/ui/primitives";
 
 type IntegrationService = "gmail" | "calendar" | "jira_zendesk";
 
@@ -159,90 +161,62 @@ export default function IntegrationsPage() {
                 Integrations are mock mode for hackathon demo.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Link
-                href="/"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/settings"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Settings
-              </Link>
-              <Link
-                href="/actions"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Actions
-              </Link>
-              <Link
-                href="/open-loops"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Open Loops
-              </Link>
-            </div>
+            <AppNav current="integrations" />
           </div>
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          <Toast tone="warning" className="mt-4 text-xs">
             Integrations are mock mode for hackathon demo by default. Execution is blocked
             until approvals when `action=execute` + a DB `sessionId` are provided.
-          </div>
+          </Toast>
           <label className="mt-3 block text-sm text-slate-700">
             Session ID for approval-gated execute (optional)
-            <input
+            <Input
               value={sessionId}
               onChange={(event) => setSessionId(event.target.value)}
               placeholder="uuid from session meta.requestId"
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="mt-1"
             />
           </label>
         </header>
 
         <div className="grid gap-4 md:grid-cols-3">
           {cards.map((card) => (
-            <article
-              key={card.title}
-              className="rounded-2xl border border-white/60 bg-white/85 p-4 shadow-[0_8px_32px_rgba(15,23,42,0.08)]"
-            >
+            <Card key={card.title} className="rounded-2xl border border-white/60 bg-white/85 p-4">
               <h2 className="text-lg font-semibold">{card.title}</h2>
               <p className="mt-2 text-sm text-slate-600">{card.description}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  variant="secondary"
                   onClick={() => runIntegration(card.id, "connect_stub")}
-                  className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-900"
                 >
                   Connect (stub)
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
                   onClick={() => runIntegration(card.id, "dry_run")}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700"
                 >
                   Dry-run only
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
                   onClick={() => runIntegration(card.id, "execute")}
-                  className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900"
                 >
                   Execute (gated)
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
                   onClick={() => retryLatestJob(card.id)}
-                  className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-900"
                 >
                   Retry last
-                </button>
+                </Button>
               </div>
               <p className="mt-3 text-xs text-slate-500">
                 {status[card.id] ?? "No jobs yet."}
               </p>
-            </article>
+            </Card>
           ))}
         </div>
       </div>

@@ -12,6 +12,11 @@ import {
   releaseIdempotencyLock,
   storeIdempotentResponse,
 } from "@/lib/idempotency";
+import {
+  JsonBodyParseError,
+  JsonBodyTooLargeError,
+  readJsonBodyWithLimit,
+} from "@/lib/request-body";
 import { makeApprovalEvent } from "@/lib/session-meta";
 
 export const runtime = "nodejs";
@@ -113,7 +118,37 @@ export async function POST(request: Request, context: RouteParams) {
     hasIdempotencyLock = true;
   }
 
-  const payload = (await request.json().catch(() => null)) as unknown;
+  let payload: unknown;
+  try {
+    payload = await readJsonBodyWithLimit(request, 8_000);
+  } catch (error) {
+    if (idempotencyScope && hasIdempotencyLock) {
+      await releaseIdempotencyLock(idempotencyScope);
+    }
+    return NextResponse.json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          detailsCode:
+            error instanceof JsonBodyTooLargeError
+              ? "APPROVAL_PAYLOAD_TOO_LARGE"
+              : "APPROVAL_BAD_JSON",
+          message:
+            error instanceof JsonBodyTooLargeError
+              ? error.message
+              : error instanceof JsonBodyParseError
+                ? error.message
+                : "Invalid approval payload.",
+          requestId,
+        },
+      },
+      {
+        status: error instanceof JsonBodyTooLargeError ? 413 : 400,
+        headers: { "x-correlation-id": correlationId },
+      },
+    );
+  }
+
   const parsed = BodySchema.safeParse(payload);
   if (!parsed.success) {
     if (idempotencyScope && hasIdempotencyLock) {

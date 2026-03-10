@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import { AppNav } from "@/components/app-nav";
+import { Badge, Button, Card, Input, Select, Toast } from "@/components/ui/primitives";
 import { PRESETS, type PresetId } from "@/lib/presets";
 import { HealthResponseSchema, type HealthResponse } from "@/lib/schema";
 import {
@@ -21,6 +22,15 @@ export default function SettingsPage() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [healthError, setHealthError] = useState("");
   const [sessionStatus, setSessionStatus] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
+
+  const deploymentUrls = [
+    { label: "Cloud Run", value: "https://voice-to-action-agent-zbluqfbniq-ew.a.run.app" },
+    { label: "Firebase", value: "https://chatgpt-ops.web.app" },
+    { label: "Health", value: "/api/health" },
+    { label: "Guardian", value: "/api/guardian" },
+    { label: "Metrics", value: "/api/metrics" },
+  ] as const;
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +87,18 @@ export default function SettingsPage() {
     }
   };
 
+  const copyValue = async (value: string) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const resolved = value.startsWith("http")
+      ? value
+      : `${window.location.origin}${value}`;
+    await navigator.clipboard.writeText(resolved);
+    setCopyStatus(`Copied ${resolved}`);
+  };
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d9f5ff_0%,#f5f9ff_35%,#f7f6ff_60%,#ffffff_100%)] px-4 py-6 text-slate-900 md:px-8">
       <div className="mx-auto max-w-5xl space-y-5">
@@ -88,36 +110,11 @@ export default function SettingsPage() {
                 Configure local behavior and diagnostics for demo stability.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Link
-                href="/"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/history"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                History
-              </Link>
-              <Link
-                href="/actions"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Actions
-              </Link>
-              <Link
-                href="/open-loops"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-              >
-                Open Loops
-              </Link>
-            </div>
+            <AppNav current="settings" />
           </div>
         </header>
 
-        <section className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+        <Card className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
           <h2 className="mb-4 text-xl font-semibold">Preferences</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -136,65 +133,60 @@ export default function SettingsPage() {
 
             <label className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <span className="mb-1 block text-sm font-semibold">Default Preset</span>
-              <select
+              <Select
                 value={settings.defaultPreset}
                 onChange={(event) =>
                   patchUserSettings({ defaultPreset: event.target.value as PresetId })
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
               >
                 {PRESETS.map((preset) => (
                   <option key={preset.id} value={preset.id}>
                     {preset.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <span className="mb-1 block text-sm font-semibold">Language (placeholder)</span>
-              <input
+              <Input
                 value={settings.language}
                 onChange={(event) => patchUserSettings({ language: event.target.value })}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
               />
             </label>
 
             <label className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <span className="mb-1 block text-sm font-semibold">Tone</span>
-              <select
+              <Select
                 value={settings.tone}
                 onChange={(event) =>
                   patchUserSettings({ tone: event.target.value as "neutral" | "pro" })
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
               >
                 <option value="neutral">neutral</option>
                 <option value="pro">pro</option>
-              </select>
+              </Select>
             </label>
 
             <label className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <span className="mb-1 block text-sm font-semibold">Workspace ID</span>
-              <input
+              <Input
                 value={settings.workspaceId}
                 onChange={(event) => patchUserSettings({ workspaceId: event.target.value })}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
               />
             </label>
 
             <label className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <span className="mb-1 block text-sm font-semibold">User ID</span>
-              <input
+              <Input
                 value={settings.userId}
                 onChange={(event) => patchUserSettings({ userId: event.target.value })}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
               />
             </label>
 
             <label className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <span className="mb-1 block text-sm font-semibold">Retention Days</span>
-              <input
+              <Input
                 type="number"
                 min={1}
                 max={365}
@@ -202,7 +194,6 @@ export default function SettingsPage() {
                 onChange={(event) =>
                   patchUserSettings({ retentionDays: Number(event.target.value) || 30 })
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
               />
             </label>
 
@@ -222,31 +213,29 @@ export default function SettingsPage() {
               </div>
             </label>
           </div>
-        </section>
+        </Card>
 
-        <section className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+        <Card className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
           <h2 className="mb-4 text-xl font-semibold">Workspace Session</h2>
           <p className="text-sm text-slate-600">
             Demo auth/workspace cookie for multi-tenant simulation.
           </p>
           <div className="mt-3 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={syncSession}
-              className="rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-900"
-            >
+            <Button variant="secondary" onClick={syncSession}>
               Sync session cookie
-            </button>
-            <p className="text-sm text-slate-600">{sessionStatus}</p>
+            </Button>
+            <Badge tone={sessionStatus.includes("failed") ? "danger" : "info"}>
+              {sessionStatus || "Idle"}
+            </Badge>
           </div>
-        </section>
+        </Card>
 
-        <section className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+        <Card className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
           <h2 className="mb-3 text-xl font-semibold">Diagnostics</h2>
           {healthError && (
-            <p className="mb-3 rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <Toast tone="danger" className="mb-3">
               {healthError}
-            </p>
+            </Toast>
           )}
           <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
@@ -317,7 +306,39 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-        </section>
+        </Card>
+
+        <Card className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.08)]">
+          <h2 className="mb-3 text-xl font-semibold">Deployment URLs</h2>
+          <p className="text-sm text-slate-600">
+            Copy-safe links for smoke checks and status verification.
+          </p>
+          <div className="mt-3 space-y-2">
+            {deploymentUrls.map((item) => (
+              <div
+                key={item.label}
+                className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[140px_1fr_auto]"
+              >
+                <span className="text-sm font-semibold text-slate-700">{item.label}</span>
+                <code className="overflow-hidden text-ellipsis whitespace-nowrap text-xs text-slate-600">
+                  {item.value}
+                </code>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => copyValue(item.value)}
+                >
+                  Copy
+                </Button>
+              </div>
+            ))}
+          </div>
+          {copyStatus && (
+            <Toast tone="success" className="mt-3 text-xs">
+              {copyStatus}
+            </Toast>
+          )}
+        </Card>
       </div>
     </div>
   );
