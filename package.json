@@ -23,7 +23,6 @@
     "db:migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
-    "@google-cloud/tasks": "^6.2.1",
     "@google/genai": "^1.43.0",
     "ioredis": "^5.8.2",
     "next": "16.1.6",
@@ -46,8 +45,5 @@
     "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.0.18"
-  },
-  "overrides": {
-    "@tootallnate/once": "^3.0.1"
   }
 }
