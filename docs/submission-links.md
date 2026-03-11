@@ -4,10 +4,20 @@
 
 - Public deployment URL (Firebase Hosting):
   - https://chatgpt-ops.web.app
+- Public deployment URL (Cloud Run):
+  - https://voice-to-action-agent-zbluqfbniq-ew.a.run.app
 - Health URL:
   - https://chatgpt-ops.web.app/health.json
+- Proof endpoints:
+  - https://voice-to-action-agent-zbluqfbniq-ew.a.run.app/api/health
+  - https://voice-to-action-agent-zbluqfbniq-ew.a.run.app/api/guardian
+  - https://voice-to-action-agent-zbluqfbniq-ew.a.run.app/api/metrics
+  - https://chatgpt-ops.web.app/api/guardian
+  - https://chatgpt-ops.web.app/api/metrics
 - Architecture diagram in repo:
   - `docs/architecture.png`
+- Automation workflow:
+  - `.github/workflows/deploy-gcp.yml`
 
 ## Contest Platform Upload Fields
 

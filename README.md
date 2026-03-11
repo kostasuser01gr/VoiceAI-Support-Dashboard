@@ -9,28 +9,45 @@ Production-like hackathon SaaS that converts voice transcript or text input into
 - audit trail
 - meta diagnostics
 
-## Live deployment proof (Google Cloud)
+## What it is
 
-- Public URL (incognito): https://chatgpt-ops--hackathon-proof-x3amxlfx.web.app
-- Health URL: https://chatgpt-ops--hackathon-proof-x3amxlfx.web.app/health.json
+This project delivers a support automation command center with deterministic AI output contracts, guardrails, and operational telemetry.
+It is built to be demo-safe for hackathon judging and production-like for reliability checks.
+It includes end-to-end proof artifacts, deployment automation, and verification commands that judges can reproduce directly.
 
-This is deployed on **Firebase Hosting** (Google Cloud).  
-Cloud Run automation is included in repo (`scripts/deploy.sh`, `cloudbuild.yaml`, `.github/workflows/deploy-gcp.yml`) and can be used once billing is enabled.
+## Live URLs
 
-## Zero to passing tests in under 10 minutes
+- Cloud Run: https://voice-to-action-agent-zbluqfbniq-ew.a.run.app
+  - https://voice-to-action-agent-zbluqfbniq-ew.a.run.app/api/health
+  - https://voice-to-action-agent-zbluqfbniq-ew.a.run.app/api/guardian
+  - https://voice-to-action-agent-zbluqfbniq-ew.a.run.app/api/metrics
+- Firebase: https://chatgpt-ops.web.app
+  - https://chatgpt-ops.web.app/health.json
+  - https://chatgpt-ops.web.app/api/guardian
+  - https://chatgpt-ops.web.app/api/metrics
+
+## Quickstart (5 minutes)
 
 ```bash
-npm install
+npm ci
 cp .env.local.example .env.local
-# set GEMINI_API_KEY in .env.local
-npm run lint
-npm run test
-npm run eval
-npm run build
+# Optional for live model mode: set GEMINI_API_KEY in .env.local
 npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Reproducible testing
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run eval
+npm run build
+npm run scan
+npm run judge:verify
+```
 
 ## Tech stack
 
@@ -185,9 +202,16 @@ DB:
 
 ## Architecture diagram
 
-- Repo path: `docs/architecture.png`
-- Architecture write-up: `docs/architecture.md`
+- Diagram image: `docs/architecture.png`
+- Diagram explanation: `docs/architecture.md`
 - Submission helper: `docs/submission-links.md`
+
+Flow summary:
+1. Input enters `/api/process` with schema-first request validation.
+2. Model output is constrained by JSON schema and re-validated server-side.
+3. Safety verifier and guardian controls apply deterministic safeguards.
+4. Sessions and jobs persist through local/db and integration queues.
+5. Dashboard pages consume health, guardian, and metrics proof endpoints.
 
 ## Deployment automation proof (bonus)
 
@@ -205,20 +229,16 @@ DB:
 ### Firebase deploy
 
 ```bash
-PROJECT_ID=<your-gcp-project> npm run deploy:firebase
+PROJECT_ID=chatgpt-ops npm run deploy:firebase
 ```
 
 ### Cloud Run deploy
 
 ```bash
-PROJECT_ID=<your-gcp-project> GEMINI_API_KEY=<key> npm run deploy:gcp
+PROJECT_ID=chatgpt-ops REGION=europe-west1 DEMO_SAFE_MODE=true ./scripts/deploy.sh
 ```
 
-Demo-safe fallback deploy (no live Gemini calls):
-
-```bash
-PROJECT_ID=<your-gcp-project> DEMO_SAFE_MODE=true npm run deploy:gcp
-```
+Live model mode requires secrets (for example `GEMINI_API_KEY`) configured in environment or CI secret store. Never commit secrets to the repo.
 
 ## Runtime guardian and attack prevention
 
@@ -259,6 +279,19 @@ See `docs/qa-checklist.md`.
 - Observable and reproducible: tests + eval + build + deployment automation
 - Dual persistence architecture (local + db) with session replay
 - Export/share/integration flows designed for safe hackathon demos
+
+## Security notes
+
+- No secrets are stored in repository source.
+- Runtime logs and responses avoid exposing secret values.
+- Request-rate limits and payload-size limits are enforced server-side.
+- Guardian + security shield reduce abuse and degrade safely under risk.
+
+## Known limitations
+
+- Live model behavior depends on external API availability and quota.
+- Firebase `/api/*` proxy behavior depends on hosting rewrite configuration.
+- Low-severity transitive audit findings remain in optional dependency paths.
 
 ## Bonus links placeholders
 
