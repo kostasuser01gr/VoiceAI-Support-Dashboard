@@ -16,109 +16,109 @@ export function SharedReportView({ session }: SharedReportViewProps) {
   }).format(new Date(createdAt));
 
   const sentimentColor = 
-    index.sentiment === 'positive' ? 'text-emerald-600 bg-emerald-50' :
-    index.sentiment === 'negative' ? 'text-rose-600 bg-rose-50' :
-    'text-slate-600 bg-slate-50';
+    index.sentiment === 'positive' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' :
+    index.sentiment === 'negative' ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' :
+    'text-zinc-400 bg-white/5 border-white/10';
 
   const urgencyColor = 
-    index.urgency === 'high' ? 'text-rose-700 bg-rose-100' :
-    index.urgency === 'medium' ? 'text-amber-700 bg-amber-100' :
-    'text-emerald-700 bg-emerald-100';
+    index.urgency === 'high' ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' :
+    index.urgency === 'medium' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' :
+    'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-black py-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        <header className="mb-8 text-center">
-          <div className="inline-flex items-center rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-800 mb-4">
+        <header className="mb-16 text-center">
+          <div className="inline-flex items-center rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400 mb-6">
             Official Voice-to-Action Report
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-            Executive Session Summary
+          <h1 className="text-5xl font-bold tracking-tight text-gradient sm:text-6xl">
+            Session Intelligence
           </h1>
-          <p className="mt-4 text-lg text-slate-600">
+          <p className="mt-6 text-sm font-medium text-zinc-500 uppercase tracking-widest">
             Processed on {formattedDate}
           </p>
         </header>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-8">
-          <div className={`rounded-2xl p-6 shadow-sm border border-slate-200 bg-white`}>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Sentiment</p>
-            <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-semibold capitalize ${sentimentColor}`}>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-12">
+          <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 backdrop-blur-xl transition-all hover:bg-white/[0.04]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Sentiment</p>
+            <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${sentimentColor}`}>
               {index.sentiment}
             </div>
           </div>
-          <div className={`rounded-2xl p-6 shadow-sm border border-slate-200 bg-white`}>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Urgency</p>
-            <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-semibold capitalize ${urgencyColor}`}>
+          <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 backdrop-blur-xl transition-all hover:bg-white/[0.04]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Urgency</p>
+            <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${urgencyColor}`}>
               {index.urgency}
             </div>
           </div>
-          <div className={`rounded-2xl p-6 shadow-sm border border-slate-200 bg-white`}>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">Safety Score</p>
-            <div className={`text-2xl font-bold ${verifier.score >= 90 ? 'text-emerald-600' : 'text-amber-600'}`}>
-              {verifier.score}/100
+          <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 backdrop-blur-xl transition-all hover:bg-white/[0.04]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Safety Score</p>
+            <div className={`text-3xl font-bold tracking-tighter ${verifier.score >= 90 ? 'text-emerald-400' : 'text-amber-400'}`}>
+              {verifier.score}%
             </div>
           </div>
         </div>
 
-        <div className="space-y-8">
-          <section className="rounded-3xl bg-white p-8 shadow-xl border border-slate-100">
-            <h2 className="text-2xl font-bold text-slate-900 mb-4 border-b pb-4">Transcript Overview</h2>
-            <div className="prose prose-slate max-w-none">
-              <p className="text-slate-800 leading-relaxed italic border-l-4 border-cyan-500 pl-4 py-2 bg-slate-50 rounded-r-lg mb-6">
+        <div className="space-y-6">
+          <section className="rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-10 backdrop-blur-2xl">
+            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-8 pb-4 border-b border-white/5">Transcript Context</h2>
+            <div className="max-w-none">
+              <p className="text-zinc-200 text-lg leading-relaxed font-medium italic border-l-2 border-sky-500/50 pl-8 mb-10">
                 &quot;{data.transcript}&quot;
               </p>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">AI Generated Summary</h3>
-              <p className="text-slate-700 leading-relaxed">
+              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-sky-400 mb-4">Executive Summary</h3>
+              <p className="text-zinc-400 leading-relaxed text-base">
                 {data.summary}
               </p>
             </div>
           </section>
 
-          <section className="rounded-3xl bg-slate-900 p-8 shadow-xl text-white">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <svg className="h-6 w-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <section className="rounded-[2.5rem] border border-sky-500/10 bg-sky-500/[0.02] p-10 backdrop-blur-2xl">
+            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-sky-400 mb-8 flex items-center gap-3">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
-              Extracted Action Items
+              Extracted Actions
             </h2>
-            <ul className="space-y-4">
+            <ul className="space-y-3">
               {data.actions.taskList.map((task, i) => (
-                <li key={i} className="flex items-start gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-xs font-bold">
+                <li key={i} className="flex items-start gap-4 bg-white/[0.01] p-5 rounded-2xl border border-white/5 transition-all hover:border-white/10 hover:bg-white/[0.02]">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-500/20 text-sky-400 text-[10px] font-bold">
                     {i + 1}
                   </span>
-                  <span className="text-slate-200">{task}</span>
+                  <span className="text-zinc-300 text-sm leading-relaxed">{task}</span>
                 </li>
               ))}
               {data.actions.taskList.length === 0 && (
-                <p className="text-slate-400 italic text-center py-4">No tasks were identified in this session.</p>
+                <p className="text-zinc-600 italic text-center py-6 text-sm">No action items were required for this session.</p>
               )}
             </ul>
           </section>
 
-          <section className="rounded-3xl bg-white p-8 shadow-xl border border-slate-100">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <section className="rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-10 backdrop-blur-2xl">
+            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-8 flex items-center gap-3">
+              <svg className="h-4 w-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              Follow-up Correspondence
+              Draft Correspondence
             </h2>
-            <div className="bg-slate-50 rounded-2xl p-6 font-mono text-sm text-slate-700 whitespace-pre-wrap border border-slate-200">
+            <div className="bg-black/40 rounded-2xl p-8 font-mono text-xs text-zinc-400 whitespace-pre-wrap border border-white/5 leading-relaxed">
               {data.actions.emailDraft}
             </div>
           </section>
 
-          <section className="rounded-3xl bg-white p-8 shadow-xl border border-slate-100">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Semantic Intelligence</h2>
-            <div className="flex flex-wrap gap-2">
+          <section className="rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-10 backdrop-blur-2xl">
+            <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-500 mb-8">Semantic Context</h2>
+            <div className="flex flex-wrap gap-3">
               {index.topics.map(topic => (
-                <span key={topic} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                <span key={topic} className="px-4 py-1.5 border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 rounded-full text-[10px] font-bold uppercase tracking-widest">
                   {topic}
                 </span>
               ))}
               {index.entities.map(entity => (
-                <span key={entity} className="px-3 py-1 bg-cyan-50 text-cyan-700 rounded-full text-xs font-bold">
+                <span key={entity} className="px-4 py-1.5 border border-white/5 bg-white/5 text-zinc-400 rounded-full text-[10px] font-bold uppercase tracking-widest">
                   {entity}
                 </span>
               ))}
@@ -126,9 +126,9 @@ export function SharedReportView({ session }: SharedReportViewProps) {
           </section>
         </div>
 
-        <footer className="mt-12 text-center text-slate-500 text-sm">
-          <p>This report was generated autonomously by the Voice-to-Action Agent.</p>
-          <p className="mt-1">&copy; 2026 Hackathon AI Solutions Inc.</p>
+        <footer className="mt-20 text-center border-t border-white/5 pt-12">
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-600 mb-2">Automated AI Intelligence Report</p>
+          <p className="text-xs text-zinc-700 font-medium tracking-tight">&copy; 2026 Voice-to-Action Agent Protocol. Highly Confidential.</p>
         </footer>
       </div>
     </div>

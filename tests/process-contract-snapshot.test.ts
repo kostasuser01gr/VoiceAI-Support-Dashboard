@@ -37,7 +37,13 @@ describe("/api/process contract snapshot", () => {
                 details: "Captured.",
               },
             ],
-            meta: {
+            intelligence: {
+              topics: [],
+              entities: [],
+              urgency: "low",
+              sentiment: "neutral",
+              openLoops: [],
+              },            meta: {
               requestId,
               model: "gemini-2.0-flash",
               latencyMs: 3,
@@ -55,6 +61,7 @@ describe("/api/process contract snapshot", () => {
       topLevelKeys: Object.keys(response),
       actionKeys: Object.keys(response.actions),
       metaKeys: Object.keys(response.meta),
+      intelligenceKeys: Object.keys(response.intelligence),
       auditEntryKeys: response.auditTrail.map((entry) => Object.keys(entry)),
     };
 
@@ -91,6 +98,13 @@ describe("/api/process contract snapshot", () => {
             "details",
           ],
         ],
+        "intelligenceKeys": [
+          "topics",
+          "entities",
+          "urgency",
+          "sentiment",
+          "openLoops",
+        ],
         "metaKeys": [
           "requestId",
           "model",
@@ -104,6 +118,7 @@ describe("/api/process contract snapshot", () => {
           "transcript",
           "summary",
           "actions",
+          "intelligence",
           "auditTrail",
           "meta",
         ],

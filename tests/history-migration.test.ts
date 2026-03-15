@@ -146,6 +146,14 @@ describe("local history v4 migration", () => {
                   details: "Checked",
                 },
               ],
+              intelligence: {
+                topics: [],
+                entities: [],
+                urgency: "low",
+                sentiment: "neutral",
+                openLoops: [],
+                openLoopsCount: 0,
+              },
               meta: {
                 requestId: "legacy-session",
                 model: "gemini-2.0-flash",
@@ -247,6 +255,13 @@ describe("local history v4 migration", () => {
             details: "Checked",
           },
         ],
+        intelligence: {
+          topics: [],
+          entities: [],
+          urgency: "low",
+          sentiment: "neutral",
+          openLoops: [],
+        },
         meta: {
           requestId: "session-1",
           model: "gemini-2.0-flash",

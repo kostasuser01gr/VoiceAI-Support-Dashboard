@@ -9,7 +9,6 @@ import {
   GeminiConfigError,
   GeminiResponseValidationError,
 } from "@/lib/gemini";
-import { deriveSessionIndex } from "@/lib/intelligence";
 import { retrieveContext } from "@/lib/rag";
 import {
   logServerEvent,
@@ -27,7 +26,7 @@ import { getGuardianSnapshot, startRuntimeGuardian } from "@/lib/guardian";
 import { ensureRole } from "@/lib/rbac";
 import { getSessionFromRequest } from "@/lib/request-session";
 import { runSafetyCheck } from "@/lib/safety";
-import { isClientBlocked, trackSecuritySignal } from "@/lib/securityShield";
+import { isClientBlocked, trackSecuritySignal, type SecuritySignal } from "@/lib/securityShield";
 import { defaultSessionReview, type SessionAnalysis } from "@/lib/session-meta";
 import { runGroundingVerifier } from "@/lib/verifier";
 import {
@@ -38,6 +37,12 @@ import {
   releaseIdempotencyLock,
   storeIdempotentResponse,
 } from "@/lib/idempotency";
+import { jsonError } from "@/lib/api-response";
+import {
+  JsonBodyParseError,
+  JsonBodyTooLargeError,
+  readJsonBodyWithLimit,
+} from "@/lib/request-body";
 import {
   ProcessRequestSchema,
   ProcessResponseSchema,
@@ -413,9 +418,11 @@ export async function processPayload(
     emailDraft: normalizedEmailDraft,
   });
 
-  const index = deriveSessionIndex(cleanTranscript, normalizedTaskList);
   const analysis: SessionAnalysis = {
-    index,
+    index: {
+      ...modelOutput.intelligence,
+      openLoopsCount: modelOutput.intelligence.openLoops.length,
+    },
     verifier: verifier.report,
   };
 
@@ -447,6 +454,7 @@ export async function processPayload(
       taskList: normalizedTaskList,
       emailDraft: normalizedEmailDraft,
     },
+    intelligence: modelOutput.intelligence,
     auditTrail,
     meta: createMeta({
       requestId,
@@ -460,7 +468,7 @@ export async function processPayload(
         profanity.replacedCount > 0 ||
         pii.redactions > 0 ||
         !verifier.report.ok,
-      approvalRequired: index.urgency === "high",
+      approvalRequired: modelOutput.intelligence.urgency === "high",
     }),
   };
 
@@ -470,218 +478,140 @@ export async function processPayload(
 export async function POST(request: Request) {
   const config = getAppConfig();
   startRuntimeGuardian();
+  
   const requestId = crypto.randomUUID();
   const correlationId = request.headers.get("x-correlation-id") ?? requestId;
   trackProcessRequest();
 
   const clientIp = getClientIp(request);
   const session = getSessionFromRequest(request);
-  const idempotencyKey = getIdempotencyKeyFromRequest(request);
-  if (config.mutationIdempotencyRequired && !idempotencyKey) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "BAD_REQUEST",
-          detailsCode: "IDEMPOTENCY_KEY_REQUIRED",
-          message: "Idempotency-Key header is required for this endpoint.",
-          requestId,
-        },
-      },
-      { status: 400, headers: { "x-correlation-id": correlationId } },
-    );
-  }
-
-  const idempotencyScope = idempotencyKey
-    ? buildIdempotencyScopeKey({
-        route: "api.process",
-        workspaceId: session.workspaceId,
-        userId: session.userId,
-        key: idempotencyKey,
-      })
-    : null;
-
-  let hasIdempotencyLock = false;
-  if (idempotencyScope) {
-    const replay = await loadIdempotentResponse(idempotencyScope);
-    if (replay) {
-      const response = NextResponse.json(replay.body, {
-        status: replay.status,
-        headers: replay.headers,
-      });
-      response.headers.set("x-correlation-id", correlationId);
-      response.headers.set("x-idempotent-replay", "true");
-      return response;
-    }
-  }
   const clientIdentity = `${clientIp}:${session.userId}`;
-  const shieldState = isClientBlocked(clientIdentity);
-  if (shieldState.blocked) {
-    trackProcessFailure();
-    trackSecuritySignal(clientIdentity, "blocked_request");
-    return NextResponse.json(
-      {
-        error: {
-          code: "SECURITY_BLOCKED",
-          detailsCode: "PROCESS_SECURITY_BLOCKED",
-          message: "Request temporarily blocked by runtime security shield.",
-          requestId,
-        },
-        security: {
-          blockedUntil: shieldState.blockedUntil,
-          riskScore: shieldState.score,
-          guardianStatus: getGuardianSnapshot().status,
-        },
-      },
-      { status: 403, headers: { "x-correlation-id": correlationId } },
-    );
-  }
-
-  const denied = ensureRole(session, ["agent"], requestId, "RBAC_PROCESS_DENIED");
-  if (denied) {
-    trackProcessFailure();
-    trackSecuritySignal(clientIdentity, "rbac_denied");
-    return denied;
-  }
-
-  if (config.historyMode === "db") {
-    const workspaceAllowed = await isUserInWorkspace(
-      session.workspaceId,
-      session.userId,
-    );
-    if (!workspaceAllowed) {
-      trackProcessFailure();
-      trackSecuritySignal(clientIdentity, "rbac_denied");
-      return NextResponse.json(
-        {
-          error: {
-            code: "FORBIDDEN",
-            detailsCode: "RBAC_WORKSPACE_MEMBERSHIP_REQUIRED",
-            message: "User is not a member of this workspace.",
-            requestId,
-          },
-        },
-        { status: 403, headers: { "x-correlation-id": correlationId } },
-      );
-    }
-  }
-
-  const rateLimit = await checkRateLimit(
-    clientIdentity,
-    config.rateLimitPerMin,
-    config.rateLimitBurstPer10s,
-  );
-  if (!rateLimit.allowed) {
-    trackProcessFailure();
-    trackSecuritySignal(clientIdentity, "rate_limited");
-    return NextResponse.json(
-      {
-        error: {
-          code: "RATE_LIMITED",
-          detailsCode: "PROCESS_RATE_LIMITED",
-          message: `Rate limit exceeded (${rateLimit.reason ?? "limit"}). Retry in ${rateLimit.retryAfterSeconds}s.`,
-          requestId,
-        },
-      },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(rateLimit.retryAfterSeconds),
-          "x-correlation-id": correlationId,
-        },
-      },
-    );
-  }
-
-  if (idempotencyScope) {
-    const acquired = await acquireIdempotencyLock(idempotencyScope);
-    if (!acquired) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "IDEMPOTENCY_IN_PROGRESS",
-            detailsCode: "IDEMPOTENCY_LOCKED",
-            message: "Another request with this idempotency key is still processing.",
-            requestId,
-          },
-        },
-        { status: 409, headers: { "x-correlation-id": correlationId } },
-      );
-    }
-    hasIdempotencyLock = true;
-  }
 
   try {
-    const rawBody = await request.text();
-    const maxBodyBytes = config.maxInputChars * 8 + 4000;
-
-    if (Buffer.byteLength(rawBody, "utf8") > maxBodyBytes) {
+    // 1. Security & RBAC Guards
+    const shieldState = isClientBlocked(clientIdentity);
+    if (shieldState.blocked) {
       trackProcessFailure();
-      trackSecuritySignal(clientIdentity, "payload_too_large");
-      return NextResponse.json(
-        {
-          error: {
-            code: "PAYLOAD_TOO_LARGE",
-            detailsCode: "PROCESS_PAYLOAD_TOO_LARGE",
-            message: `Request body exceeds ${maxBodyBytes} bytes.`,
-            requestId,
-          },
-        },
-        { status: 413, headers: { "x-correlation-id": correlationId } },
-      );
+      trackSecuritySignal(clientIdentity, "blocked_request");
+      return jsonError({
+        status: 403,
+        code: "SECURITY_BLOCKED",
+        detailsCode: "PROCESS_SECURITY_BLOCKED",
+        message: "Request temporarily blocked by runtime security shield.",
+        requestId,
+        correlationId,
+        extra: { 
+          security: { 
+            blockedUntil: shieldState.blockedUntil, 
+            riskScore: shieldState.score, 
+            guardianStatus: getGuardianSnapshot().status 
+          } 
+        }
+      });
     }
 
-    let payload: unknown;
+    const denied = ensureRole(session, ["agent"], requestId, "RBAC_PROCESS_DENIED");
+    if (denied) {
+      trackProcessFailure();
+      trackSecuritySignal(clientIdentity, "rbac_denied");
+      return denied;
+    }
+
+    if (config.historyMode === "db") {
+      const workspaceAllowed = await isUserInWorkspace(session.workspaceId, session.userId);
+      if (!workspaceAllowed) {
+        trackProcessFailure();
+        trackSecuritySignal(clientIdentity, "rbac_denied");
+        return jsonError({
+          status: 403,
+          code: "FORBIDDEN",
+          detailsCode: "RBAC_WORKSPACE_MEMBERSHIP_REQUIRED",
+          message: "User is not a member of this workspace.",
+          requestId,
+          correlationId,
+        });
+      }
+    }
+
+    // 2. Rate Limiting
+    const rateLimit = await checkRateLimit(clientIdentity, config.rateLimitPerMin, config.rateLimitBurstPer10s);
+    if (!rateLimit.allowed) {
+      trackProcessFailure();
+      trackSecuritySignal(clientIdentity, "rate_limited");
+      const response = jsonError({
+        status: 429,
+        code: "RATE_LIMITED",
+        detailsCode: "PROCESS_RATE_LIMITED",
+        message: `Rate limit exceeded (${rateLimit.reason ?? "limit"}). Retry in ${rateLimit.retryAfterSeconds}s.`,
+        requestId,
+        correlationId,
+      });
+      response.headers.set("Retry-After", String(rateLimit.retryAfterSeconds));
+      return response;
+    }
+
+    // 3. Idempotency & Body Parsing
+    const idempotencyKey = getIdempotencyKeyFromRequest(request);
+    if (config.mutationIdempotencyRequired && !idempotencyKey) {
+      return jsonError({
+        status: 400,
+        code: "BAD_REQUEST",
+        detailsCode: "IDEMPOTENCY_KEY_REQUIRED",
+        message: "Idempotency-Key header is required for this endpoint.",
+        requestId,
+        correlationId,
+      });
+    }
+
+    const idempotencyScope = idempotencyKey ? buildIdempotencyScopeKey({
+      route: "api.process",
+      workspaceId: session.workspaceId,
+      userId: session.userId,
+      key: idempotencyKey,
+    }) : null;
+
+    if (idempotencyScope) {
+      const replay = await loadIdempotentResponse(idempotencyScope);
+      if (replay) {
+        const response = NextResponse.json(replay.body, { status: replay.status, headers: replay.headers });
+        response.headers.set("x-correlation-id", correlationId);
+        response.headers.set("x-idempotent-replay", "true");
+        return response;
+      }
+
+      const acquired = await acquireIdempotencyLock(idempotencyScope);
+      if (!acquired) {
+        return jsonError({
+          status: 409,
+          code: "IDEMPOTENCY_IN_PROGRESS",
+          detailsCode: "IDEMPOTENCY_LOCKED",
+          message: "Another request with this idempotency key is still processing.",
+          requestId,
+          correlationId,
+        });
+      }
+    }
+
+    // 4. Main Processing Logic
     try {
-      payload = JSON.parse(rawBody) as unknown;
-    } catch {
-      trackProcessFailure();
-      trackSecuritySignal(clientIdentity, "bad_json");
-      return NextResponse.json(
-        {
-          error: {
-            code: "BAD_JSON",
-            detailsCode: "PROCESS_BAD_JSON",
-            message: "Request body must be valid JSON.",
-            requestId,
-          },
-        },
-        { status: 400, headers: { "x-correlation-id": correlationId } },
-      );
-    }
+      const maxBodyBytes = config.maxInputChars * 8 + 4000;
+      const payload = await readJsonBodyWithLimit(request, maxBodyBytes);
+      const redactPii = request.headers.get("x-redact-pii") === "true";
+      
+      let analysis: SessionAnalysis = defaultAnalysis();
+      const result = await processPayload(payload, {
+        requestId,
+        redactPii,
+        onAnalysis: (next) => { analysis = next; },
+      });
 
-    const redactPii = request.headers.get("x-redact-pii") === "true";
-    let analysis: SessionAnalysis = {
-      index: {
-        entities: [],
-        topics: [],
-        urgency: "low",
-        sentiment: "neutral",
-        openLoops: [],
-        openLoopsCount: 0,
-      },
-      verifier: {
-        ok: true,
-        score: 100,
-        flags: [],
-        policy: config.verifierPolicy,
-      },
-    };
+      // 5. Success Orchestration (Metrics, DB, Idempotency Store)
+      trackProcessSuccess();
+      trackLatency(result.meta.latencyMs);
+      trackSecuritySignal(clientIdentity, "success");
 
-    const result = await processPayload(payload, {
-      requestId,
-      redactPii,
-      onAnalysis: (next) => {
-        analysis = next;
-      },
-    });
-
-    trackProcessSuccess();
-    trackLatency(result.meta.latencyMs);
-    trackSecuritySignal(clientIdentity, "success");
-
-    const storeHistory = request.headers.get("x-store-history") !== "false";
-    if (storeHistory && config.historyMode === "db") {
-      try {
+      const storeHistory = request.headers.get("x-store-history") !== "false";
+      if (storeHistory && config.historyMode === "db") {
         await insertSession({
           id: result.meta.requestId,
           created_at: new Date().toISOString(),
@@ -698,120 +628,86 @@ export async function POST(request: Request) {
           verifier_report: analysis.verifier,
           review: defaultSessionReview(),
           approval_events: [],
-        });
-      } catch (error) {
-        logServerEvent("warn", "process.db_persist_failed", {
-          requestId,
-          correlationId,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        }).catch(err => logServerEvent("warn", "process.db_persist_failed", { requestId, error: err.message }));
       }
-    }
 
-    const successResponse = NextResponse.json(result, {
-      headers: {
-        "x-correlation-id": correlationId,
-        "x-verifier-score": String(analysis.verifier.score),
-        "x-verifier-ok": analysis.verifier.ok ? "true" : "false",
-        "x-verifier-flags": analysis.verifier.flags.join(","),
-        "x-session-urgency": analysis.index.urgency,
-        "x-session-sentiment": analysis.index.sentiment,
-        "x-session-topics": analysis.index.topics.join(","),
-      },
-    });
-    if (idempotencyScope) {
-      await storeIdempotentResponse(idempotencyScope, {
-        status: successResponse.status,
-        body: result,
+      const successResponse = NextResponse.json(result, {
         headers: {
+          "x-correlation-id": correlationId,
           "x-verifier-score": String(analysis.verifier.score),
           "x-verifier-ok": analysis.verifier.ok ? "true" : "false",
           "x-verifier-flags": analysis.verifier.flags.join(","),
-          "x-session-urgency": analysis.index.urgency,
-          "x-session-sentiment": analysis.index.sentiment,
-          "x-session-topics": analysis.index.topics.join(","),
         },
-        storedAt: new Date().toISOString(),
       });
-    }
-    return successResponse;
-  } catch (error) {
-    trackProcessFailure();
-    logServerEvent("error", "process.failed", {
-      requestId,
-      correlationId,
-      error: error instanceof Error ? error.message : String(error),
-    });
 
-    if (error instanceof Error) {
-      const apiError = error as ApiProcessError;
-      if (apiError.code === "BAD_REQUEST") {
-        trackSecuritySignal(clientIdentity, "payload_invalid");
-      } else if (apiError.code === "SAFETY_CHECK_FAILED") {
-        trackSecuritySignal(clientIdentity, "safety_failed");
-      } else if (apiError.code === "VERIFIER_FAILED") {
-        trackSecuritySignal(clientIdentity, "verifier_rejected");
-      } else if (
-        apiError.code === "MODEL_ERROR" ||
-        apiError.code === "MODEL_SCHEMA_ERROR" ||
-        apiError.code === "GEMINI_CONFIG_ERROR"
-      ) {
-        trackSecuritySignal(clientIdentity, "model_failure");
-      }
-      if (apiError.meta?.latencyMs != null) {
-        trackLatency(apiError.meta.latencyMs);
-      }
-
-      const response = buildErrorResponse(error as ApiProcessError | Error, requestId);
-      response.headers.set("x-correlation-id", correlationId);
       if (idempotencyScope) {
-        const body = (await response.clone().json().catch(() => null)) as unknown;
         await storeIdempotentResponse(idempotencyScope, {
-          status: response.status,
-          body: body ?? {
-            error: {
-              code: "INTERNAL_ERROR",
-              detailsCode: "PROCESS_RESPONSE_PARSE_FAILED",
-              message: "Failed to parse response.",
-              requestId,
-            },
+          status: successResponse.status,
+          body: result,
+          headers: {
+            "x-verifier-score": String(analysis.verifier.score),
+            "x-verifier-ok": analysis.verifier.ok ? "true" : "false",
+            "x-verifier-flags": analysis.verifier.flags.join(","),
           },
           storedAt: new Date().toISOString(),
         });
       }
-      return response;
+
+      return successResponse;
+
+    } catch (error) {
+      if (error instanceof JsonBodyTooLargeError) {
+        trackSecuritySignal(clientIdentity, "payload_too_large");
+        return jsonError({ status: 413, code: "PAYLOAD_TOO_LARGE", message: error.message, requestId, correlationId });
+      }
+      if (error instanceof JsonBodyParseError) {
+        trackSecuritySignal(clientIdentity, "bad_json");
+        return jsonError({ status: 400, code: "BAD_JSON", message: error.message, requestId, correlationId });
+      }
+      throw error; // Re-throw to main catch
+    } finally {
+      if (idempotencyScope) await releaseIdempotencyLock(idempotencyScope);
     }
 
-    const fallbackResponse = NextResponse.json(
-      {
-        error: {
-          code: "INTERNAL_ERROR",
-          detailsCode: "PROCESS_UNKNOWN_ERROR",
-          message: "Unknown processing error.",
-          requestId,
-        },
-      },
-      { status: 500, headers: { "x-correlation-id": correlationId } },
-    );
-    if (idempotencyScope) {
-      const body = (await fallbackResponse.clone().json().catch(() => null)) as unknown;
-      await storeIdempotentResponse(idempotencyScope, {
-        status: fallbackResponse.status,
-        body: body ?? {
-          error: {
-            code: "INTERNAL_ERROR",
-            detailsCode: "PROCESS_RESPONSE_PARSE_FAILED",
-            message: "Failed to parse response.",
-            requestId,
-          },
-        },
-        storedAt: new Date().toISOString(),
-      });
+  } catch (error) {
+    trackProcessFailure();
+    logServerEvent("error", "process.failed", { requestId, correlationId, error: error instanceof Error ? error.message : String(error) });
+
+    const apiError = error instanceof ApiProcessError ? error : null;
+    if (apiError) {
+      const signalMap: Record<string, SecuritySignal> = {
+        "BAD_REQUEST": "payload_invalid",
+        "SAFETY_CHECK_FAILED": "safety_failed",
+        "VERIFIER_FAILED": "verifier_rejected",
+        "MODEL_ERROR": "model_failure",
+        "MODEL_SCHEMA_ERROR": "model_failure",
+        "GEMINI_CONFIG_ERROR": "model_failure",
+      };
+      const signal = signalMap[apiError.code];
+      if (signal) trackSecuritySignal(clientIdentity, signal);
+      if (apiError.meta?.latencyMs != null) trackLatency(apiError.meta.latencyMs);
+      return buildErrorResponse(apiError, requestId);
     }
-    return fallbackResponse;
-  } finally {
-    if (idempotencyScope && hasIdempotencyLock) {
-      await releaseIdempotencyLock(idempotencyScope);
-    }
+
+    return jsonError({ status: 500, code: "INTERNAL_ERROR", message: "Unexpected server error.", requestId, correlationId });
   }
+}
+
+function defaultAnalysis(): SessionAnalysis {
+  return {
+    index: {
+      entities: [],
+      topics: [],
+      urgency: "low",
+      sentiment: "neutral",
+      openLoops: [],
+      openLoopsCount: 0,
+    },
+    verifier: {
+      ok: true,
+      score: 100,
+      flags: [],
+      policy: "warn",
+    },
+  };
 }

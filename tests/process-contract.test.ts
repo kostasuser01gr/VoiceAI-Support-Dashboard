@@ -18,6 +18,13 @@ function buildStubResponse(
         emailDraft:
           "Subject: Follow-up\n\nThanks for the update.\n\nPlease review before sending.",
       },
+      intelligence: {
+        topics: [],
+        entities: [],
+        urgency: "low",
+        sentiment: "neutral",
+        openLoops: [],
+      },
       auditTrail: [
         {
           step: "capture" as const,
@@ -77,6 +84,7 @@ describe("/api/process response contract", () => {
       "transcript",
       "summary",
       "actions",
+      "intelligence",
       "auditTrail",
       "meta",
     ]);

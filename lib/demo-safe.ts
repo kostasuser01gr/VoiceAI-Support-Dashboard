@@ -86,6 +86,13 @@ export function buildDemoSafeModelOutput(params: DemoSafeParams): ProcessRespons
       taskList,
       emailDraft,
     },
+    intelligence: {
+      topics: ["support", "general"],
+      entities: [],
+      urgency: "low",
+      sentiment: "neutral",
+      openLoops: [],
+    },
     auditTrail: [
       { step: "capture", timestamp: now, details: "Captured for demo-safe mode." },
       {

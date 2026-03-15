@@ -1,87 +1,62 @@
-import type { ReactNode } from "react";
-
-type ClassValue = string | false | null | undefined;
-
-function cn(...values: ClassValue[]) {
-  return values.filter(Boolean).join(" ");
-}
+import type { ReactNode, ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { cn } from "@/lib/utils";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const buttonVariantClass: Record<ButtonVariant, string> = {
-  primary:
-    "border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950",
-  secondary:
-    "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 active:bg-slate-100",
-  ghost:
-    "border border-transparent bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200",
-  danger:
-    "border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 active:bg-rose-200",
+  primary: "border border-white/10 bg-white text-black hover:bg-white/90 active:bg-white/80 shadow-[0_0_15px_rgba(255,255,255,0.1)]",
+  secondary: "border border-white/5 bg-white/5 text-white hover:bg-white/10 active:bg-white/8 shadow-sm",
+  ghost: "border border-transparent bg-transparent text-zinc-400 hover:text-white hover:bg-white/5",
+  danger: "border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 active:bg-rose-500/30",
 };
 
 const buttonSizeClass: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-xs",
-  md: "h-10 px-4 text-sm",
-  lg: "h-11 px-5 text-sm",
+  sm: "h-8 px-3 text-xs tracking-tight",
+  md: "h-10 px-5 text-sm font-medium tracking-tight",
+  lg: "h-12 px-6 text-sm font-medium tracking-tight",
 };
 
-export function Button({
-  className,
-  children,
-  variant = "secondary",
-  size = "md",
-  type = "button",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
-}) {
+}
+
+export function Button({ className, children, variant = "secondary", size = "md", type = "button", ...props }: ButtonProps) {
   return (
-    <button
-      type={type}
-      className={cn(
-        "inline-flex items-center justify-center rounded-xl font-semibold transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        buttonVariantClass[variant],
-        buttonSizeClass[size],
-        className,
-      )}
-      {...props}
-    >
+    <button type={type} className={cn("inline-flex items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 disabled:cursor-not-allowed disabled:opacity-40", buttonVariantClass[variant], buttonSizeClass[size], className)} {...props}>
       {children}
     </button>
   );
 }
 
-export function Input({
-  className,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+interface CardProps {
+  className?: string;
+  children: ReactNode;
+}
+
+export function Card({ className, children }: CardProps) {
+  return <section className={cn("glass-panel rounded-xl p-6", className)}>{children}</section>;
+}
+
+export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       className={cn(
-        "h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900",
-        "placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1",
-        className,
+        "h-10 w-full rounded-xl border border-white/5 bg-white/[0.02] px-4 text-sm text-white placeholder:text-zinc-700 outline-none focus:border-sky-500/50 focus:bg-white/[0.04] transition-all",
+        className
       )}
       {...props}
     />
   );
 }
 
-export function Select({
-  className,
-  children,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       className={cn(
-        "h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1",
-        className,
+        "h-10 w-full rounded-xl border border-white/5 bg-white/[0.02] px-4 text-sm text-zinc-300 outline-none focus:border-sky-500/50 focus:bg-white/[0.04] transition-all appearance-none cursor-pointer",
+        className
       )}
       {...props}
     >
@@ -90,204 +65,143 @@ export function Select({
   );
 }
 
+export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={cn(
+        "w-full rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm text-white placeholder:text-zinc-700 outline-none focus:border-sky-500/50 focus:bg-white/[0.04] transition-all resize-none leading-relaxed",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
 type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 
-const badgeClass: Record<BadgeTone, string> = {
-  neutral: "border-slate-200 bg-slate-100 text-slate-700",
-  success: "border-emerald-200 bg-emerald-100 text-emerald-800",
-  warning: "border-amber-200 bg-amber-100 text-amber-800",
-  danger: "border-rose-200 bg-rose-100 text-rose-800",
-  info: "border-cyan-200 bg-cyan-100 text-cyan-800",
-};
-
-export function Badge({
-  tone = "neutral",
-  className,
-  children,
-}: {
+interface BadgeProps {
   tone?: BadgeTone;
   className?: string;
   children: ReactNode;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold",
-        badgeClass[tone],
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
 }
 
-export function Card({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section
-      className={cn(
-        "rounded-2xl border border-white/70 bg-white/85 p-4 shadow-[0_8px_32px_rgba(15,23,42,0.08)] backdrop-blur",
-        className,
-      )}
-    >
-      {children}
-    </section>
-  );
+export function Badge({ tone = "neutral", className, children }: BadgeProps) {
+  const badgeClass: Record<BadgeTone, string> = {
+    neutral: "border-white/10 bg-white/5 text-zinc-400",
+    success: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+    warning: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+    danger: "border-rose-500/20 bg-rose-500/10 text-rose-400",
+    info: "border-sky-500/20 bg-sky-500/10 text-sky-400",
+  };
+  return <span className={cn("inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest", badgeClass[tone], className)}>{children}</span>;
 }
 
-export function Tabs({
-  value,
-  onChange,
-  tabs,
-  className,
-}: {
+export function Toast({ tone = "neutral", className, children }: BadgeProps) {
+  const toastClass: Record<BadgeTone, string> = {
+    neutral: "border-white/10 bg-white/5 text-zinc-400",
+    success: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+    warning: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+    danger: "border-rose-500/20 bg-rose-500/10 text-rose-400",
+    info: "border-sky-500/20 bg-sky-500/10 text-sky-400",
+  };
+  return <div className={cn("rounded-lg border px-4 py-3 text-sm", toastClass[tone], className)}>{children}</div>;
+}
+
+interface DropdownOption {
   value: string;
-  onChange: (value: string) => void;
-  tabs: Array<{ value: string; label: string; count?: number }>;
+  label: string;
+}
+
+interface DropdownProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: DropdownOption[];
   className?: string;
-}) {
+}
+
+export function Dropdown({ value, onChange, options, className }: DropdownProps) {
   return (
-    <div className={cn("inline-flex flex-wrap gap-2", className)}>
-      {tabs.map((tab) => {
-        const active = tab.value === value;
-        return (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => onChange(tab.value)}
-            className={cn(
-              "inline-flex h-9 items-center gap-1 rounded-lg border px-3 text-xs font-semibold transition-colors",
-              active
-                ? "border-cyan-300 bg-cyan-50 text-cyan-900"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1",
-            )}
-          >
-            <span>{tab.label}</span>
-            {typeof tab.count === "number" && <span>{tab.count}</span>}
-          </button>
-        );
-      })}
+    <Select value={value} onChange={onChange} className={className}>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </Select>
+  );
+}
+
+interface Tab {
+  id: string;
+  label: string;
+}
+
+interface TabsProps {
+  tabs: Tab[];
+  activeTab: string;
+  onChange: (id: string) => void;
+  className?: string;
+}
+
+export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
+  return (
+    <div className={cn("flex space-x-2 border-b border-white/10", className)}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onChange(tab.id)}
+          className={cn(
+            "px-4 py-2 text-sm font-medium transition-colors border-b-2",
+            activeTab === tab.id
+              ? "border-sky-400 text-sky-400"
+              : "border-transparent text-zinc-500 hover:text-zinc-300 hover:border-white/20"
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   );
 }
 
-export function Toast({
-  tone = "info",
-  children,
-  className,
-}: {
-  tone?: BadgeTone;
-  children: ReactNode;
-  className?: string;
-}) {
-  const toneClass =
-    tone === "danger"
-      ? "border-rose-300 bg-rose-50 text-rose-800"
-      : tone === "warning"
-        ? "border-amber-300 bg-amber-50 text-amber-800"
-        : tone === "success"
-          ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-          : tone === "info"
-            ? "border-cyan-300 bg-cyan-50 text-cyan-800"
-            : "border-slate-300 bg-slate-50 text-slate-700";
-
-  return (
-    <div className={cn("rounded-xl border px-3 py-2 text-sm", toneClass, className)}>
-      {children}
-    </div>
-  );
-}
-
-export function Tooltip({
-  label,
-  children,
-  className,
-}: {
+interface TooltipProps {
   label: string;
   children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <span
-      title={label}
-      aria-label={label}
-      className={cn("inline-flex cursor-help items-center", className)}
-    >
-      {children}
-    </span>
-  );
 }
 
-export function Dialog({
-  open,
-  title,
-  description,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  title: string;
-  description?: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  if (!open) {
-    return null;
-  }
-
+export function Tooltip({ label, children }: TooltipProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl"
-      >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-            {description && <p className="text-sm text-slate-600">{description}</p>}
-          </div>
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-        {children}
+    <div className="group relative inline-flex">
+      {children}
+      <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 z-50 border border-white/10">
+        {label}
       </div>
     </div>
   );
 }
 
-export function Dropdown({
-  value,
-  onChange,
-  options,
-  className,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
-  className?: string;
-}) {
+interface DialogProps {
+  open: boolean;
+  title: string;
+  description?: string;
+  onClose: () => void;
+  children: ReactNode;
+}
+
+export function Dialog({ open, title, description, onClose, children }: DialogProps) {
+  if (!open) return null;
   return (
-    <Select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className={className}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </Select>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div role="dialog" className="w-full max-w-2xl glass-panel rounded-2xl p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-white">{title}</h2>
+            {description && <p className="mt-1 text-sm text-zinc-500">{description}</p>}
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="rounded-full w-8 h-8 p-0">✕</Button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 

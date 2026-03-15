@@ -27,6 +27,7 @@ describe("schema contracts", () => {
         taskList: ["Send recap"],
         emailDraft: "Subject: Update\n\nBody\n\nPlease review before sending.",
       },
+      intelligence: { topics: [], entities: [], urgency: "low", sentiment: "neutral", openLoops: [] },
       auditTrail: [
         {
           step: "capture",

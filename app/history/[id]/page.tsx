@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { ErrorBoundary } from "@/components/error-boundary";
 import { VoiceActionDashboard } from "@/components/voice-action-dashboard";
+import { Button } from "@/components/ui/primitives";
 import {
   getLocalHistoryServerSnapshot,
   getLocalHistorySnapshot,
@@ -131,25 +132,28 @@ export default function HistoryDetailPage() {
   }, [localSessions, sessionId]);
 
   if (!sessionId) {
-    return <div className="p-6 text-slate-700">Missing session id.</div>;
+    return <div className="p-12 text-zinc-500 font-medium uppercase tracking-widest text-[10px]">Missing protocol identifier.</div>;
   }
 
   if (health?.diagnostics.historyMode === "db") {
     if (loading) {
-      return <div className="p-6 text-slate-700">Loading DB session...</div>;
+      return (
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-sky-400 animate-pulse">
+            Retrieving Intelligence...
+          </div>
+        </div>
+      );
     }
 
     if (!dbSession) {
       return (
-        <div className="min-h-screen bg-slate-50 px-4 py-8">
-          <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 text-center">
-            <h1 className="text-2xl font-semibold">Session unavailable</h1>
-            <p className="mt-2 text-sm text-slate-600">{error || "Session not found."}</p>
-            <Link
-              href="/history"
-              className="mt-4 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-            >
-              Back to history
+        <div className="min-h-screen bg-black px-4 py-24">
+          <div className="mx-auto max-w-xl rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-12 text-center backdrop-blur-3xl">
+            <h1 className="text-3xl font-bold tracking-tight text-white">Registry Miss</h1>
+            <p className="mt-4 text-sm text-zinc-500 leading-relaxed">{error || "The requested intelligence sequence could not be found."}</p>
+            <Link href="/history">
+              <Button variant="secondary" className="mt-8 px-8">Return to Archive</Button>
             </Link>
           </div>
         </div>
@@ -165,17 +169,14 @@ export default function HistoryDetailPage() {
 
   if (!localSession) {
     return (
-      <div className="min-h-screen bg-slate-50 px-4 py-8">
-        <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 text-center">
-          <h1 className="text-2xl font-semibold">Session unavailable</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            This local session could not be found in browser storage.
+      <div className="min-h-screen bg-black px-4 py-24">
+        <div className="mx-auto max-w-xl rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-12 text-center backdrop-blur-3xl">
+          <h1 className="text-3xl font-bold tracking-tight text-white">Registry Miss</h1>
+          <p className="mt-4 text-sm text-zinc-500 leading-relaxed">
+            This localized intelligence packet is no longer available in the browser storage registry.
           </p>
-          <Link
-            href="/history"
-            className="mt-4 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-          >
-            Back to history
+          <Link href="/history">
+            <Button variant="secondary" className="mt-8 px-8">Return to Archive</Button>
           </Link>
         </div>
       </div>

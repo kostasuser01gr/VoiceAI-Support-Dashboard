@@ -16,7 +16,8 @@ Non-negotiable constraints:
 4) Output valid JSON only, conforming to the provided schema.
 5) Keep summary concise (1 to 3 sentences).
 6) Tasks must be action-oriented and grounded in transcript.
-7) Email draft must include a subject line and end with: "Please review before sending."`,
+7) Extract 'intelligence' metadata including key topics, named entities, urgency (low/medium/high), sentiment (positive/negative/neutral), and specific open loops requiring follow-up.
+8) Email draft must include a subject line and end with: "Please review before sending."`,
     policy: [
       "Return complete JSON matching schema exactly.",
       "No markdown or prose outside JSON.",
@@ -35,7 +36,8 @@ Rules:
 4) Return strict JSON only.
 5) Summary must be 1-3 sentences in executive style.
 6) Tasks should start with action verbs and remain under 140 characters when possible.
-7) Email draft must include subject line and end with "Please review before sending."`,
+7) Extract 'intelligence' metadata (topics, entities, urgency, sentiment, and open-loops).
+8) Email draft must include subject line and end with "Please review before sending."`,
     policy: [
       "Keep auditTrail in order: capture, transcribe, extract, draft, safety_check.",
       "Avoid speculative language.",

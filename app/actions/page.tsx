@@ -216,20 +216,6 @@ export default function ActionsPage() {
     );
   }, [filteredRows]);
 
-  const groupedCounts = useMemo(() => {
-    return filteredRows.reduce(
-      (acc, row) => {
-        const status = toReviewStatus(row.review);
-        acc[status] += 1;
-        return acc;
-      },
-      {
-        pending: 0,
-        approved: 0,
-        executed: 0,
-      } as Record<ReviewStatus, number>,
-    );
-  }, [filteredRows]);
 
   const allVisibleSelected =
     filteredRows.length > 0 &&
@@ -289,12 +275,12 @@ export default function ActionsPage() {
           <div className="mt-4 grid gap-2 md:grid-cols-[1fr_180px]">
             <Input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
               placeholder="Search by summary or id"
             />
             <Dropdown
               value={statusFilter}
-              onChange={(value) => setStatusFilter(value as ReviewStatus | "all")}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as ReviewStatus | "all")}
               options={[
                 { value: "pending", label: "Pending" },
                 { value: "approved", label: "Approved" },
@@ -305,15 +291,15 @@ export default function ActionsPage() {
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <Tabs
-              value={statusFilter}
-              onChange={(value) =>
+              activeTab={statusFilter}
+              onChange={(value: string) =>
                 setStatusFilter(value as ReviewStatus | "all")
               }
               tabs={[
-                { value: "pending", label: "Pending", count: groupedCounts.pending },
-                { value: "approved", label: "Approved", count: groupedCounts.approved },
-                { value: "executed", label: "Executed", count: groupedCounts.executed },
-                { value: "all", label: "All", count: filteredRows.length },
+                { id: "pending", label: "Pending" },
+                { id: "approved", label: "Approved" },
+                { id: "executed", label: "Executed" },
+                { id: "all", label: "All" },
               ]}
             />
             <div className="flex flex-wrap items-center gap-2">

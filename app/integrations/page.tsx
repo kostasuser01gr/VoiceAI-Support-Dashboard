@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { AppNav } from "@/components/app-nav";
-import { Button, Card, Input, Toast } from "@/components/ui/primitives";
+import { Button, Input } from "@/components/ui/primitives";
 
 type IntegrationService = "gmail" | "calendar" | "jira_zendesk";
 
@@ -15,17 +15,17 @@ const cards: Array<{
   {
     id: "gmail",
     title: "Gmail",
-    description: "Draft and review outbound follow-up emails.",
+    description: "Automated drafting and distribution of follow-up intelligence.",
   },
   {
     id: "calendar",
     title: "Google Calendar",
-    description: "Convert extracted tasks into calendar events.",
+    description: "Synchronization of extracted temporal requirements to primary calendars.",
   },
   {
     id: "jira_zendesk",
     title: "Jira / Zendesk",
-    description: "Send action items to issue tracking queues.",
+    description: "Systemic handoff of action items to operational support queues.",
   },
 ];
 
@@ -40,7 +40,7 @@ export default function IntegrationsPage() {
   ) => {
     setStatus((previous) => ({
       ...previous,
-      [service]: "Queuing...",
+      [service]: "Enqueuing...",
     }));
 
     try {
@@ -73,7 +73,7 @@ export default function IntegrationsPage() {
 
       setStatus((previous) => ({
         ...previous,
-        [service]: `Queued job ${jobId}`,
+        [service]: `Job ${jobId.slice(0,8)} active`,
       }));
       setLatestJob((previous) => ({
         ...previous,
@@ -93,20 +93,20 @@ export default function IntegrationsPage() {
             const jobResult = statusPayload.job.result ?? "in progress";
             setStatus((previous) => ({
               ...previous,
-              [service]: `${jobStatus}: ${jobResult}`,
+              [service]: `${jobStatus.toUpperCase()}: ${jobResult}`,
             }));
           }
         } catch {
           setStatus((previous) => ({
             ...previous,
-            [service]: "Could not fetch job status.",
+            [service]: "Status unavailable",
           }));
         }
-      }, 800);
+      }, 1200);
     } catch (error) {
       setStatus((previous) => ({
         ...previous,
-        [service]: error instanceof Error ? error.message : "Request failed.",
+        [service]: error instanceof Error ? error.message : "Handshake failed",
       }));
     }
   };
@@ -114,109 +114,109 @@ export default function IntegrationsPage() {
   const retryLatestJob = async (service: IntegrationService) => {
     const jobId = latestJob[service];
     if (!jobId) {
-      setStatus((previous) => ({
-        ...previous,
-        [service]: "No previous job to retry.",
-      }));
+      setStatus((previous) => ({ ...previous, [service]: "Null reference" }));
       return;
     }
 
-    setStatus((previous) => ({
-      ...previous,
-      [service]: "Retrying...",
-    }));
+    setStatus((previous) => ({ ...previous, [service]: "Re-executing..." }));
 
     try {
       const response = await fetch(`/api/integrations/jobs/${jobId}/retry`, {
         method: "POST",
       });
       const payload = (await response.json()) as { job?: { id: string } };
-      if (!response.ok || !payload.job) {
-        throw new Error("Retry failed.");
-      }
-      setLatestJob((previous) => ({
-        ...previous,
-        [service]: payload.job!.id,
-      }));
-      setStatus((previous) => ({
-        ...previous,
-        [service]: `Retry queued as ${payload.job!.id}`,
-      }));
+      if (!response.ok || !payload.job) throw new Error("Retry sequence failed");
+      setLatestJob((previous) => ({ ...previous, [service]: payload.job!.id }));
+      setStatus((previous) => ({ ...previous, [service]: `Retrying: ${payload.job!.id.slice(0,8)}` }));
     } catch {
-      setStatus((previous) => ({
-        ...previous,
-        [service]: "Retry failed.",
-      }));
+      setStatus((previous) => ({ ...previous, [service]: "System error" }));
     }
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#d9f5ff_0%,#f5f9ff_35%,#f7f6ff_60%,#ffffff_100%)] px-4 py-6 text-slate-900 md:px-8">
-      <div className="mx-auto max-w-5xl space-y-5">
-        <header className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-[0_10px_40px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="min-h-screen bg-black px-4 py-16 text-zinc-300 md:px-12">
+      <div className="mx-auto max-w-[1200px]">
+        <header className="mb-12 rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-10 backdrop-blur-2xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div>
-              <h1 className="text-3xl font-semibold">Integrations</h1>
-              <p className="text-sm text-slate-600">
-                Integrations are mock mode for hackathon demo.
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-sky-400 mb-2">Connectivity</p>
+              <h1 className="text-5xl font-bold tracking-tight text-white">External Pipelines</h1>
+              <p className="mt-4 text-sm text-zinc-500 font-medium max-w-xl">
+                Bridge session intelligence with your primary operational stack. Secure, gated, and fully audited.
               </p>
             </div>
             <AppNav current="integrations" />
           </div>
-          <Toast tone="warning" className="mt-4 text-xs">
-            Integrations are mock mode for hackathon demo by default. Execution is blocked
-            until approvals when `action=execute` + a DB `sessionId` are provided.
-          </Toast>
-          <label className="mt-3 block text-sm text-slate-700">
-            Session ID for approval-gated execute (optional)
-            <Input
-              value={sessionId}
-              onChange={(event) => setSessionId(event.target.value)}
-              placeholder="uuid from session meta.requestId"
-              className="mt-1"
-            />
-          </label>
+          
+          <div className="mt-10 p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+            <p className="text-xs text-amber-200/70 font-medium leading-relaxed">
+              <span className="text-amber-400 font-bold uppercase tracking-widest mr-2">Note:</span> 
+              Integrations are operating in high-fidelity mock mode for this protocol cycle. Real-world execution requires explicit administrative approval.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_auto]">
+            <div className="relative group">
+              <Input
+                value={sessionId}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSessionId(e.target.value)}
+                placeholder="Session correlation ID (required for gated execution)..."
+              />
+            </div>
+          </div>
         </header>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
           {cards.map((card) => (
-            <Card key={card.title} className="rounded-2xl border border-white/60 bg-white/85 p-4">
-              <h2 className="text-lg font-semibold">{card.title}</h2>
-              <p className="mt-2 text-sm text-slate-600">{card.description}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => runIntegration(card.id, "connect_stub")}
-                >
-                  Connect (stub)
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => runIntegration(card.id, "dry_run")}
-                >
-                  Dry-run only
-                </Button>
+            <div 
+              key={card.id} 
+              className="rounded-[2rem] border border-white/5 bg-white/[0.01] p-8 transition-all hover:bg-white/[0.02] hover:border-white/10"
+            >
+              <h2 className="text-xl font-bold text-white mb-3">{card.title}</h2>
+              <p className="text-sm text-zinc-500 leading-relaxed mb-8">{card.description}</p>
+              
+              <div className="space-y-3">
                 <Button
                   size="sm"
                   variant="primary"
+                  className="w-full"
                   onClick={() => runIntegration(card.id, "execute")}
                 >
-                  Execute (gated)
+                  Execute Sequence
                 </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => runIntegration(card.id, "dry_run")}
+                  >
+                    Dry Run
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => retryLatestJob(card.id)}
+                  >
+                    Retry
+                  </Button>
+                </div>
                 <Button
                   size="sm"
-                  variant="secondary"
-                  onClick={() => retryLatestJob(card.id)}
+                  variant="ghost"
+                  className="w-full text-[10px]"
+                  onClick={() => runIntegration(card.id, "connect_stub")}
                 >
-                  Retry last
+                  Configure Stub
                 </Button>
               </div>
-              <p className="mt-3 text-xs text-slate-500">
-                {status[card.id] ?? "No jobs yet."}
-              </p>
-            </Card>
+
+              <div className="mt-8 pt-6 border-t border-white/5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 mb-2">Status</p>
+                <p className="text-xs font-mono text-sky-400/80">
+                  {status[card.id] ?? "Idle"}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
       </div>

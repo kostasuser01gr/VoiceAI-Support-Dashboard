@@ -1,32 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #eef4ff;
-  --surface: #ffffff;
-  --surface-muted: #f8fafc;
-  --foreground: #0f172a;
-  --muted-foreground: #475569;
-  --border: #cbd5e1;
-  --primary: #0f172a;
-  --accent: #0891b2;
-  --ring: #0ea5e9;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 10px 32px rgba(15, 23, 42, 0.1);
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --text-xs: 12px;
-  --text-sm: 14px;
-  --text-md: 16px;
-  --text-lg: 20px;
-  --text-xl: 30px;
+  --background: #000000;
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --foreground: #ffffff;
+  --muted-foreground: rgba(255, 255, 255, 0.5);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --primary: #ffffff;
+  --accent: #38bdf8;
+  --ring: rgba(56, 189, 248, 0.4);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.95);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --inner-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 @theme inline {
@@ -38,32 +29,77 @@
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 10% 0%, #d9f5ff 0%, #f5f9ff 34%, #f7f6ff 62%, #ffffff 100%);
+  background-color: var(--background);
+  background-image: 
+    radial-gradient(circle at 50% -20%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 0% 100%, rgba(56, 189, 248, 0.03) 0%, transparent 40%);
   color: var(--foreground);
-  font-family: var(--font-body), "Segoe UI", sans-serif;
+  font-family: var(--font-body), "Geist", "Inter", sans-serif;
   line-height: 1.5;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-heading), "Segoe UI", sans-serif;
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), "Geist", "Inter Display", sans-serif;
+  letter-spacing: -0.03em;
+  font-weight: 600;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.glass-panel {
+  background: var(--surface);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-md), var(--inner-glow);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-*:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+.glass-panel:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: border-color 0.3s ease;
+}
+
+.glass-card:focus-within {
+  border-color: var(--accent);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+::selection {
+  background: rgba(56, 189, 248, 0.3);
+  color: #fff;
+}
+
+.text-gradient {
+  background: linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }

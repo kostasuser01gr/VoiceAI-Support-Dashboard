@@ -39,6 +39,7 @@ describe("processPayload", () => {
               emailDraft:
                 "Subject: Weekly Update\n\nSharing weekly update details.\n\nPlease review before sending.",
             },
+            intelligence: { topics: [], entities: [], urgency: "low", sentiment: "neutral", openLoops: [] },
             auditTrail: [
               {
                 step: "capture",
@@ -161,6 +162,7 @@ describe("processPayload", () => {
                   emailDraft:
                     "Subject: Contract Board\\n\\nLegal closure is required.\\n\\nPlease review before sending.",
                 },
+                intelligence: { topics: [], entities: [], urgency: "low", sentiment: "neutral", openLoops: [] },
                 auditTrail: [
                   {
                     step: "capture",

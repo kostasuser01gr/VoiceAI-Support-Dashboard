@@ -7,7 +7,7 @@ import {
   makeApprovalPayloadHash,
   type ApprovalEvent,
   type SessionAnalysis,
-  type SessionReviewState,
+  type SessionReview,
 } from "@/lib/session-meta";
 
 export type DbSessionRecord = {
@@ -24,7 +24,7 @@ export type DbSessionRecord = {
   meta: ProcessResponse["meta"];
   session_index: SessionAnalysis["index"];
   verifier_report: SessionAnalysis["verifier"];
-  review: SessionReviewState;
+  review: SessionReview;
   approval_events: ApprovalEvent[];
 };
 
@@ -56,12 +56,12 @@ export type CursorPage<T> = {
 let pool: Pool | null = null;
 let initialized = false;
 
-function normalizeReview(review: unknown): SessionReviewState {
+function normalizeReview(review: unknown): SessionReview {
   if (!review || typeof review !== "object") {
     return defaultSessionReview();
   }
 
-  const candidate = review as Partial<SessionReviewState>;
+  const candidate = review as Partial<SessionReview>;
   return {
     emailApproved: Boolean(candidate.emailApproved),
     tasksApproved: Boolean(candidate.tasksApproved),
@@ -71,7 +71,7 @@ function normalizeReview(review: unknown): SessionReviewState {
         ? (candidate.taskOwners as Record<string, string>)
         : {},
     comments: Array.isArray(candidate.comments)
-      ? candidate.comments.filter((entry) => typeof entry === "string")
+      ? candidate.comments.filter((entry: any) => typeof entry === "string")
       : [],
   };
 }
@@ -560,7 +560,7 @@ export async function getSessionById(id: string) {
 
 export async function updateSessionReview(
   sessionId: string,
-  review: SessionReviewState,
+  review: SessionReview,
 ) {
   await ensureInitialized();
   await getPool().query(

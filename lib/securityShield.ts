@@ -1,6 +1,6 @@
 import { getAppConfig } from "@/lib/config";
 
-type SecuritySignal =
+export type SecuritySignal =
   | "success"
   | "rbac_denied"
   | "rate_limited"
