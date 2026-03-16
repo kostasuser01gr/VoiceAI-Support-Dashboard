@@ -15,7 +15,7 @@ type SharePayload = {
   pwd?: string;
 };
 
-const DEMO_FALLBACK_SECRET = "local-demo-share-secret";
+const DEMO_FALLBACK_PHRASE = "local-demo-share-secret";
 
 function getSecret() {
   const secret = process.env.SHARE_TOKEN_SECRET;
@@ -30,7 +30,7 @@ function getSecret() {
           "Set SHARE_TOKEN_SECRET to a cryptographically random value.",
       );
     }
-    return DEMO_FALLBACK_SECRET;
+    return DEMO_FALLBACK_PHRASE;
   }
   return secret;
 }
