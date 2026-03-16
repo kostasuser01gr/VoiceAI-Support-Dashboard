@@ -1,0 +1,62 @@
+version: 2
+
+updates:
+  # npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "type:scan-task"
+      - "security:P2"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps(dev)"
+      include: "scope"
+    reviewers: []
+    ignore:
+      # Ignore major version bumps for stable dependencies (review manually)
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+    # Security updates are always allowed regardless of ignore rules
+    # (Dependabot creates separate security PRs)
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "type:scan-task"
+      - "security:P1"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Docker base image
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - "type:scan-task"
+      - "security:P1"
+    commit-message:
+      prefix: "docker"
+      include: "scope"

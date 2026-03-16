@@ -1,0 +1,89 @@
+# .pre-commit-config.yaml — BLACK_VAULT V13 pre-commit hooks
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # TruffleHog: secrets scanning
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.63.7
+    hooks:
+      - id: trufflehog
+        name: TruffleHog secrets scan
+        entry: trufflehog git file://.
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+  # Prettier: code formatting (TypeScript/JSON/YAML/Markdown)
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        name: Prettier format
+        types_or: [javascript, jsx, ts, tsx, json, yaml, markdown]
+        exclude: |
+          (?x)^(
+            package-lock\.json|
+            sbom\.json|
+            node_modules/|
+            \.next/|
+            coverage/
+          )$
+        additional_dependencies:
+          - prettier@3.3.3
+
+  # General pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+        name: Check for merge conflict markers
+      - id: check-json
+        name: Validate JSON files
+        exclude: |
+          (?x)^(
+            sbom\.json|
+            package-lock\.json|
+            tsconfig\.tsbuildinfo
+          )$
+      - id: check-yaml
+        name: Validate YAML files
+      - id: end-of-file-fixer
+        name: Ensure files end with newline
+        exclude: |
+          (?x)^(
+            \.next/|
+            coverage/|
+            node_modules/
+          )$
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: no-commit-to-branch
+        name: Prevent direct commits to main
+        args: [--branch, main]
+      - id: detect-private-key
+        name: Detect private keys
+
+  # ESLint via local tools
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint (0 warnings)
+        language: node
+        entry: npx eslint --max-warnings 0
+        types: [file]
+        files: \.(ts|tsx)$
+        exclude: |
+          (?x)^(
+            node_modules/|
+            \.next/|
+            coverage/
+          )$
+        pass_filenames: true
+
+      - id: tsc
+        name: TypeScript typecheck
+        language: system
+        entry: npx tsc --noEmit
+        pass_filenames: false
+        stages: [commit]

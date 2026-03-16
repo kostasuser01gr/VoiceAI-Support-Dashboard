@@ -1,0 +1,53 @@
+{
+  "protocol": "PROJECT_OPS_V13_BLACK_VAULT_ENTERPRISE",
+  "generated": "2026-03-16",
+  "risks": [
+    {
+      "id": "R001",
+      "description": "flatted <3.4.0 (GHSA-25h7-pfq9-p65f) in node_modules",
+      "likelihood": "LOW",
+      "impact": "MEDIUM",
+      "mitigation": "flatted@3.4.1 installed; overrides pin in package.json; npm audit fix blocked by unrelated EBADPLATFORM conflict",
+      "status": "MITIGATED"
+    },
+    {
+      "id": "R002",
+      "description": "G7 mutation score below 95% for auth/ssrf/verifier (overall 55.9%)",
+      "likelihood": "MEDIUM",
+      "impact": "HIGH",
+      "mitigation": "484 equivalent mutants documented; boundary-value tests added for ssrf.ts; full mutation hardening deferred to next sprint",
+      "status": "OPEN",
+      "remediation_plan": "Add full boundary-value mutation kill suite for ssrf.ts (IPv6 bracket stripping, allowlist normalization), verifier.ts (NLP score thresholds), idempotency.ts (cache window boundaries), rateLimit.ts (token bucket boundaries)",
+      "eta": "next sprint"
+    },
+    {
+      "id": "R003",
+      "description": "HEALTHCHECK missing from Dockerfile (trivy LOW)",
+      "likelihood": "LOW",
+      "impact": "LOW",
+      "mitigation": "Container orchestration health checks configured at Cloud Run level",
+      "status": "ACCEPTED",
+      "rationale": "Informational only"
+    },
+    {
+      "id": "R004",
+      "description": "SHARE_TOKEN_SECRET not set in deployed Cloud Run service",
+      "likelihood": "HIGH",
+      "impact": "HIGH",
+      "mitigation": "Logged via production guard; operators must set env var before production use",
+      "status": "OPEN",
+      "owner": "operator",
+      "action_required": "Set SHARE_TOKEN_SECRET in Cloud Run environment"
+    },
+    {
+      "id": "R005",
+      "description": "SESSION_SIGNING_SECRET not set in deployed Cloud Run service",
+      "likelihood": "HIGH",
+      "impact": "HIGH",
+      "mitigation": "DEFAULT_SESSION returned for missing/invalid cookies; acceptable for demo",
+      "status": "OPEN",
+      "owner": "operator",
+      "action_required": "Set SESSION_SIGNING_SECRET in Cloud Run environment for production use"
+    }
+  ]
+}

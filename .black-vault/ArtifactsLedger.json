@@ -1,0 +1,68 @@
+{
+  "protocol": "PROJECT_OPS_V13_BLACK_VAULT_ENTERPRISE",
+  "generated": "2026-03-16",
+  "artifacts": [
+    {
+      "id": "A001",
+      "type": "SBOM",
+      "format": "CycloneDX 1.6",
+      "file": "sbom.json",
+      "components": 536,
+      "generated": "2026-03-16",
+      "commit": "17c1126",
+      "tool": "@cyclonedx/cyclonedx-npm"
+    },
+    {
+      "id": "A002",
+      "type": "SAST_REPORT",
+      "tool": "semgrep",
+      "config": "p/security-audit",
+      "findings": 0,
+      "generated": "2026-03-16",
+      "commit": "17c1126"
+    },
+    {
+      "id": "A003",
+      "type": "CONTAINER_SCAN",
+      "tool": "trivy",
+      "scanners": ["vuln", "config", "secret"],
+      "critical": 0,
+      "high": 0,
+      "low": 1,
+      "low_detail": "HEALTHCHECK missing (informational only)",
+      "generated": "2026-03-16",
+      "commit": "17c1126"
+    },
+    {
+      "id": "A004",
+      "type": "MUTATION_REPORT",
+      "tool": "stryker",
+      "runner": "@stryker-mutator/vitest-runner",
+      "overall_score": "55.9%",
+      "rbac_score": "95.2%",
+      "file": "reports/mutation/mutation.json",
+      "generated": "2026-03-16",
+      "commit": "17c1126"
+    },
+    {
+      "id": "A005",
+      "type": "COVERAGE_REPORT",
+      "tool": "vitest/v8",
+      "lines": "75.81%",
+      "branches": "65.77%",
+      "functions": "78.66%",
+      "statements": "75.81%",
+      "dir": "coverage/",
+      "generated": "2026-03-16",
+      "commit": "17c1126"
+    },
+    {
+      "id": "A006",
+      "type": "HARDENING_REPORT",
+      "version": "V12",
+      "file": "BLACK_VAULT_V12_REPORT.md",
+      "generated": "2026-03-16",
+      "commit": "f6854af"
+    }
+  ]
+}

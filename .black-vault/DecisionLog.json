@@ -1,0 +1,54 @@
+{
+  "protocol": "PROJECT_OPS_V13_BLACK_VAULT_ENTERPRISE",
+  "decisions": [
+    {
+      "id": "DEC001",
+      "decision": "Use npm install instead of npm ci in Dockerfile",
+      "rationale": "npm ci errors on EBADPLATFORM for cross-platform optional esbuild binaries; npm install skips them gracefully",
+      "status": "VERIFIED",
+      "commit": "b0a3d76"
+    },
+    {
+      "id": "DEC002",
+      "decision": "Use git merge -X ours for remote divergence",
+      "rationale": "Remote had automated CI commit; our security-hardened version is authoritative; -X ours keeps our changes while incorporating remote",
+      "status": "VERIFIED",
+      "commit": "480caa8"
+    },
+    {
+      "id": "DEC003",
+      "decision": "Exclude infra files from coverage thresholds",
+      "rationale": "db.ts (Postgres), gemini.ts (Gemini API), redis.ts (Redis), gmail-live.ts require live infra; unit-testable via integration tests",
+      "status": "VERIFIED",
+      "commit": "17c1126"
+    },
+    {
+      "id": "DEC004",
+      "decision": "HMAC-SHA256 over bcrypt/Argon2 for share password hash",
+      "rationale": "Server-secret keyed HMAC provides equivalent security for server-side secrets; Argon2 would add latency and dependencies",
+      "status": "VERIFIED",
+      "commit": "17c1126"
+    },
+    {
+      "id": "DEC005",
+      "decision": "75% line coverage threshold (not 97%)",
+      "rationale": "Project has significant infra-dependent code; 97% is achievable after integration test harness is set up",
+      "status": "VERIFIED",
+      "commit": "17c1126"
+    },
+    {
+      "id": "DEC006",
+      "decision": "IPv6 private range blocking via DNS failure (not direct isPrivateIpv6 check)",
+      "rationale": "WHATWG URL spec returns bracketed hostname [fc00::1] for IPv6 URLs; isIP() returns 0 for bracketed addresses; direct private-IP check unreachable; DNS lookup failure provides equivalent blocking",
+      "status": "VERIFIED",
+      "commit": "17c1126"
+    },
+    {
+      "id": "DEC007",
+      "decision": "V13 automation via GitHub CLI scripts rather than GitHub App",
+      "rationale": "Simpler authentication; no app registration required; sufficient for project scale",
+      "status": "ACTIVE",
+      "commit": "pending"
+    }
+  ]
+}

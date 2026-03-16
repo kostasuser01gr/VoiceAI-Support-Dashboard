@@ -1,0 +1,98 @@
+{
+  "protocol": "PROJECT_OPS_V13_BLACK_VAULT_ENTERPRISE",
+  "generated": "2026-03-16T11:10:00Z",
+  "commit": "f6854af",
+  "summary": {
+    "total": 9,
+    "P0": 1,
+    "P1": 4,
+    "P2": 4,
+    "open": 0,
+    "verified": 9,
+    "accepted_risk": 0
+  },
+  "findings": [
+    {
+      "id": "F001",
+      "severity": "P0",
+      "category": "Hardcoded fallback secret in production",
+      "location": "lib/share.ts:19",
+      "status": "VERIFIED",
+      "fix": "Production guard with console.error alert; fail-open with demo key only in non-production. Operators MUST set SHARE_TOKEN_SECRET.",
+      "commit_fixed": "17c1126"
+    },
+    {
+      "id": "F002",
+      "severity": "P1",
+      "category": "SHA256 password hash (no server key)",
+      "location": "lib/share.ts:67",
+      "status": "VERIFIED",
+      "fix": "Switched from plain SHA256 to HMAC-SHA256 keyed by server secret.",
+      "commit_fixed": "17c1126"
+    },
+    {
+      "id": "F003",
+      "severity": "P1",
+      "category": "sameSite: lax on session cookie",
+      "location": "lib/auth.ts:155",
+      "status": "VERIFIED",
+      "fix": "Changed from lax to strict to prevent CSRF via cross-site form submission.",
+      "commit_fixed": "17c1126"
+    },
+    {
+      "id": "F004",
+      "severity": "P2",
+      "category": "CSP unsafe-eval allowed",
+      "location": "lib/http-security.ts",
+      "status": "VERIFIED",
+      "fix": "Removed unsafe-eval from Content-Security-Policy to reduce XSS attack surface.",
+      "commit_fixed": "17c1126"
+    },
+    {
+      "id": "F005",
+      "severity": "P2",
+      "category": "Unpinned GitHub Actions",
+      "location": ".github/workflows/*.yml",
+      "status": "VERIFIED",
+      "fix": "All 5 GitHub Actions pinned to commit SHA.",
+      "commit_fixed": "17c1126"
+    },
+    {
+      "id": "F006",
+      "severity": "P1",
+      "category": "npm ci EBADPLATFORM in Dockerfile",
+      "location": "Dockerfile",
+      "status": "VERIFIED",
+      "fix": "Switched to npm install --ignore-scripts for cross-platform optional dep handling.",
+      "commit_fixed": "b0a3d76"
+    },
+    {
+      "id": "F007",
+      "severity": "P2",
+      "category": "any type in db.ts filter callback",
+      "location": "lib/db.ts:74",
+      "status": "VERIFIED",
+      "fix": "Replaced any types with precise TypeScript types throughout codebase.",
+      "commit_fixed": "17c1126"
+    },
+    {
+      "id": "F008",
+      "severity": "P1",
+      "category": "Post-merge syntax error in process/route.ts",
+      "location": "app/api/process/route.ts:669",
+      "status": "VERIFIED",
+      "fix": "Resolved syntax error introduced during merge conflict resolution.",
+      "commit_fixed": "59f5622"
+    },
+    {
+      "id": "F009",
+      "severity": "P2",
+      "category": "Post-merge TypeScript regressions (4 errors)",
+      "location": "multiple",
+      "status": "VERIFIED",
+      "fix": "Fixed all TypeScript strict mode errors from post-merge regressions.",
+      "commit_fixed": "59f5622"
+    }
+  ],
+  "last_synced": "2026-03-16T10:02:41.205Z"
+}

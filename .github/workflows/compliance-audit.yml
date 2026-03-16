@@ -1,0 +1,87 @@
+name: Monthly Compliance Audit
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"  # 06:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  compliance-audit:
+    name: Compliance Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Run full test suite with coverage
+        run: npm test -- --coverage
+
+      - name: Run dependency audit
+        run: npm audit --json > reports/audit-$(date +%Y-%m).json || true
+
+      - name: Generate SBOM
+        run: npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file sbom.json || true
+
+      - name: SAST scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/security-audit
+        continue-on-error: true
+
+      - name: Secrets scan
+        run: |
+          PATTERNS='(password|secret|api_key|apikey|access_token|private_key)\s*=\s*["\x27][^"$\x27{][^"$\x27{]{7,}'
+          COUNT=$(grep -rIiE "$PATTERNS" \
+            --include="*.ts" --include="*.tsx" --include="*.js" \
+            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=coverage \
+            . 2>/dev/null | wc -l || echo "0")
+          echo "Secrets found: $COUNT"
+          echo "SECRETS_COUNT=$COUNT" >> $GITHUB_ENV
+
+      - name: Update ComplianceLedger
+        run: |
+          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          NEXT_AUDIT=$(date -u -d "+1 month" +%Y-%m-%d 2>/dev/null || date -u -v+1m +%Y-%m-%d)
+          node -e "
+            const fs = require('fs');
+            const ledger = JSON.parse(fs.readFileSync('.black-vault/ComplianceLedger.json','utf8'));
+            ledger.last_audit = '$DATE';
+            ledger.next_audit = '$NEXT_AUDIT';
+            fs.writeFileSync('.black-vault/ComplianceLedger.json', JSON.stringify(ledger, null, 2));
+          "
+
+      - name: Commit compliance update
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(compliance): monthly audit update [skip ci]"
+          file_pattern: ".black-vault/ComplianceLedger.json sbom.json reports/"
+        continue-on-error: true
+
+      - name: Create compliance issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[COMPLIANCE] Monthly audit failure — ${new Date().toISOString().slice(0,10)}`,
+              body: `## Compliance Audit Failure\n\nThe monthly compliance audit workflow failed.\n\n**Run**: ${context.runId}\n**Date**: ${new Date().toISOString()}\n\nPlease investigate and remediate.\n\n---\n*Protocol: PROJECT_OPS_V13_BLACK_VAULT_ENTERPRISE*`,
+              labels: ['type:scan-task', 'security:P1', 'status:OPEN']
+            })

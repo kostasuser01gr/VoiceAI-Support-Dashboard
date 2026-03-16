@@ -1,0 +1,48 @@
+{
+  "protocol": "PROJECT_OPS_V13_BLACK_VAULT_ENTERPRISE",
+  "period": "2026-03",
+  "entries": [
+    {
+      "date": "2026-03-16",
+      "tool": "Cloud Run",
+      "description": "europe-west1 deployment, revision 00009-n7n",
+      "tier": "free/minimal",
+      "notes": "Demo scale — minimal traffic"
+    },
+    {
+      "date": "2026-03-16",
+      "tool": "Firebase Hosting",
+      "description": "chatgpt-ops.web.app static hosting",
+      "tier": "free",
+      "notes": "Within free tier limits"
+    },
+    {
+      "date": "2026-03-16",
+      "tool": "semgrep",
+      "description": "SAST scan p/security-audit",
+      "tier": "free (open source rules)",
+      "notes": "G9 gate"
+    },
+    {
+      "date": "2026-03-16",
+      "tool": "trivy",
+      "description": "Container/filesystem scan",
+      "tier": "free (open source)",
+      "notes": "G12 gate"
+    },
+    {
+      "date": "2026-03-16",
+      "tool": "Stryker",
+      "description": "Mutation testing 7 security-critical files",
+      "tier": "free (open source)",
+      "notes": "G7 gate; ~8 min per run locally"
+    },
+    {
+      "date": "2026-03-16",
+      "tool": "GitHub Actions",
+      "description": "CI/CD pipelines",
+      "tier": "free (public repo)",
+      "notes": "3 workflow files; CodeQL + CI + deploy"
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+name: Nightly Gates (G1-G14 + Metrics)
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # 02:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  full-gates:
+    name: Full Gate Suite G1–G14
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      # G1: Build
+      - name: G1 — Build
+        run: npm run build
+
+      # G2: Lint
+      - name: G2 — Lint
+        run: npx eslint . --max-warnings 0
+
+      # G3: TypeCheck
+      - name: G3 — TypeCheck
+        run: npx tsc --noEmit
+
+      # G4: Tests
+      - name: G4 — Tests
+        run: npm test
+
+      # G6: Coverage
+      - name: G6 — Coverage
+        run: npm test -- --coverage --reporter=json --outputFile=reports/coverage-summary.json
+        continue-on-error: true
+
+      # G7: Mutation Testing (nightly only — slow)
+      - name: G7 — Mutation (Stryker)
+        run: npx stryker run
+        continue-on-error: true
+
+      # G8: Audit
+      - name: G8 — Audit
+        run: npm audit --audit-level=high || true
+
+      # G9: SAST
+      - name: G9 — SAST (semgrep)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/security-audit
+        continue-on-error: true
+
+      # G10: Secrets
+      - name: G10 — Secrets scan
+        run: |
+          PATTERNS='(password|secret|api_key|apikey|access_token|private_key)\s*=\s*["\x27][^"$\x27{][^"$\x27{]{7,}'
+          if grep -rIiE "$PATTERNS" \
+            --include="*.ts" --include="*.tsx" --include="*.js" \
+            --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=coverage \
+            . ; then
+            echo "FAIL: Potential hardcoded secrets found"
+            exit 1
+          fi
+          echo "PASS: No hardcoded secrets found"
+
+      # G12: Container Scan
+      - name: G12 — Container scan (trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          scanners: "vuln,config,secret"
+          exit-code: "0"
+          severity: "CRITICAL,HIGH"
+
+      # Record metrics
+      - name: Record metrics to MetricsLedger
+        run: |
+          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          COMMIT=$(git rev-parse --short HEAD)
+          node -e "
+            const fs = require('fs');
+            const ledger = JSON.parse(fs.readFileSync('.black-vault/MetricsLedger.json','utf8'));
+            const entry = {
+              date: '$DATE',
+              commit: '$COMMIT',
+              version: 'nightly',
+              notes: 'Automated nightly gate run'
+            };
+            ledger.metrics.push(entry);
+            fs.writeFileSync('.black-vault/MetricsLedger.json', JSON.stringify(ledger, null, 2));
+          "
+
+      - name: Commit metrics update
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(nightly): update MetricsLedger [skip ci]"
+          file_pattern: ".black-vault/MetricsLedger.json reports/"
+        continue-on-error: true

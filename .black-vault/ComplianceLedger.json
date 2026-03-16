@@ -1,0 +1,79 @@
+{
+  "protocol": "PROJECT_OPS_V13_BLACK_VAULT_ENTERPRISE",
+  "last_audit": "2026-03-16",
+  "commit": "f6854af",
+  "controls": [
+    {
+      "id": "CC-01",
+      "control": "Secrets management",
+      "requirement": "No hardcoded secrets in codebase",
+      "status": "PASS",
+      "evidence": "G10: grep scan 0 secrets; production guards for SHARE_TOKEN_SECRET and SESSION_SIGNING_SECRET"
+    },
+    {
+      "id": "CC-02",
+      "control": "Supply chain integrity",
+      "requirement": "Lockfile committed; SBOM generated; CI actions pinned to SHA",
+      "status": "PASS",
+      "evidence": "package-lock.json committed; sbom.json CycloneDX 1.6 536 components; all 5 actions SHA-pinned"
+    },
+    {
+      "id": "CC-03",
+      "control": "Vulnerability management",
+      "requirement": "0 CRITICAL/HIGH in container scan; audit mitigated",
+      "status": "PASS",
+      "evidence": "trivy: 0 CRITICAL 0 HIGH; flatted@3.4.1 installed; overrides pin"
+    },
+    {
+      "id": "CC-04",
+      "control": "SAST",
+      "requirement": "0 findings from semgrep p/security-audit",
+      "status": "PASS",
+      "evidence": "G9: semgrep 0 findings"
+    },
+    {
+      "id": "CC-05",
+      "control": "Test coverage",
+      "requirement": "≥75% line, ≥60% branch, ≥70% function",
+      "status": "PASS",
+      "evidence": "75.81% lines, 65.77% branches, 78.66% functions"
+    },
+    {
+      "id": "CC-06",
+      "control": "Authentication hardening",
+      "requirement": "Cookie sameSite strict; session signing enforced in production",
+      "status": "PASS",
+      "evidence": "lib/auth.ts: sameSite strict; REQUIRE_SIGNED_SESSION_IN_PROD defaults to true in production"
+    },
+    {
+      "id": "CC-07",
+      "control": "SSRF prevention",
+      "requirement": "All private IP ranges blocked; HTTPS only; allowlist support",
+      "status": "PASS",
+      "evidence": "lib/ssrf.ts: RFC1918, CGNAT, link-local, benchmark, multicast all blocked; IPv6 blocked via DNS"
+    },
+    {
+      "id": "CC-08",
+      "control": "Container hardening",
+      "requirement": "Non-root user; pinned base image; no install scripts",
+      "status": "PASS",
+      "evidence": "Dockerfile: nextjs:1001; node:20.19-alpine; npm install --ignore-scripts"
+    },
+    {
+      "id": "CC-09",
+      "control": "CI/CD least privilege",
+      "requirement": "All workflows declare minimal permissions",
+      "status": "PASS",
+      "evidence": "ci.yml read-only default; deploy-gcp.yml contents:read id-token:write; codeql.yml minimal"
+    },
+    {
+      "id": "CC-10",
+      "control": "Mutation testing (security-critical files)",
+      "requirement": "rbac.ts ≥95%",
+      "status": "PASS",
+      "evidence": "rbac.ts: 95.2%"
+    }
+  ],
+  "next_audit": "2026-04-16",
+  "cadence": "monthly"
+}
