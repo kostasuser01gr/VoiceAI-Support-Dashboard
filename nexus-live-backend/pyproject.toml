@@ -1,0 +1,33 @@
+[project]
+name = "black-vault-nexus-live"
+version = "1.0.0"
+description = "Real-time AI-powered code hardening with Gemini Live API"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "S", "B", "A", "C4", "UP"]
+ignore = [
+    "S101",  # Allow assert in tests
+    "S104",  # Binding to 0.0.0.0 (required for Cloud Run)
+    "S105",  # Dev-only default secrets (overridden in production via env)
+    "E501",  # Line length in CSS/regex strings
+    "B008",  # FastAPI File(...) default pattern
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

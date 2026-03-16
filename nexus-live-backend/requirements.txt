@@ -1,0 +1,43 @@
+# Core
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-dotenv>=1.0.1
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+
+# Google AI / Gemini
+google-genai>=1.5.0
+google-cloud-aiplatform>=1.78.0
+google-cloud-firestore>=2.19.0
+google-cloud-storage>=2.19.0
+
+# Real-time / WebSocket
+websockets>=14.0
+python-multipart>=0.0.20
+
+# Audio processing (optional — pyaudio needs portaudio system lib)
+numpy>=2.0.0
+pydub>=0.25.1
+
+# Screen capture / Vision
+mss>=9.0.0
+Pillow>=11.0.0
+opencv-python-headless>=4.10.0
+
+# Utilities
+structlog>=24.4.0
+httpx>=0.28.0
+tenacity>=9.0.0
+jinja2>=3.1.0
+aiofiles>=24.1.0
+orjson>=3.10.0
+
+# Testing
+pytest>=8.3.0
+pytest-asyncio>=0.25.0
+pytest-cov>=6.0.0
+anyio[trio]>=4.0.0
+
+# Linting
+ruff>=0.8.0
+mypy>=1.14.0
