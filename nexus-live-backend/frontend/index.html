@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLACK_VAULT NEXUS LIVE — Code Hardening Agent</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="logo">&#x1f510;</span>
+      <h1>BLACK_VAULT <span class="accent">NEXUS LIVE</span></h1>
+      <span class="badge">Gemini Live Agent</span>
+    </div>
+    <div class="header-status">
+      <span id="connectionStatus" class="status-dot disconnected"></span>
+      <span id="connectionText">Disconnected</span>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="main-grid">
+
+    <!-- Left Panel: Code Input -->
+    <section class="panel code-panel">
+      <div class="panel-header">
+        <h2>Code Input</h2>
+        <div class="panel-actions">
+          <button id="btnAnalyze" class="btn btn-primary" onclick="analyzeCode()">Analyze</button>
+          <button id="btnScreenshot" class="btn btn-secondary" onclick="captureAndAnalyze()">Screenshot</button>
+        </div>
+      </div>
+      <div class="code-editor">
+        <textarea id="codeInput" spellcheck="false" placeholder="Paste your code here for security analysis...
+
+# Example: Vulnerable login endpoint
+def login(username, password):
+    query = f&quot;SELECT * FROM users WHERE username='{username}'&quot;
+    result = db.execute(query)
+    if result:
+        return generate_token(result)
+    return None">def login(username, password):
+    query = f"SELECT * FROM users WHERE username='{username}'"
+    result = db.execute(query)
+    if result and result.password == password:
+        return generate_token(result)
+    return None
+
+def get_user(user_id):
+    query = "SELECT * FROM users WHERE id = " + user_id
+    return db.execute(query)
+
+API_KEY = "sk-1234567890abcdef"
+
+def process_input(data):
+    eval(data["expression"])
+</textarea>
+      </div>
+      <div class="code-meta">
+        <select id="languageSelect">
+          <option value="python" selected>Python</option>
+          <option value="javascript">JavaScript</option>
+          <option value="typescript">TypeScript</option>
+          <option value="java">Java</option>
+          <option value="go">Go</option>
+          <option value="rust">Rust</option>
+        </select>
+        <input id="filenameInput" type="text" placeholder="filename.py" value="login.py">
+      </div>
+    </section>
+
+    <!-- Center Panel: Agent Interaction -->
+    <section class="panel agent-panel">
+      <div class="panel-header">
+        <h2>Live Agent</h2>
+        <div class="panel-actions">
+          <button id="btnVoice" class="btn btn-voice" onclick="toggleVoice()">
+            <span id="voiceIcon">&#x1f3a4;</span>
+          </button>
+          <button id="btnInterrupt" class="btn btn-danger" onclick="sendInterrupt()" disabled>
+            Interrupt
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat / Response Area -->
+      <div id="chatArea" class="chat-area">
+        <div class="chat-message agent">
+          <div class="chat-avatar">&#x1f916;</div>
+          <div class="chat-content">
+            <p>Hello! I'm <strong>NEXUS LIVE</strong>, your code security hardening agent.</p>
+            <p>Paste code on the left, click <strong>Analyze</strong>, or use the microphone to ask me anything about code security.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text Input -->
+      <div class="chat-input-area">
+        <input id="textInput" type="text" placeholder="Ask about code security..."
+               onkeypress="if(event.key==='Enter')sendText()">
+        <button class="btn btn-primary" onclick="sendText()">Send</button>
+      </div>
+    </section>
+
+    <!-- Right Panel: Results -->
+    <section class="panel results-panel">
+      <div class="panel-header">
+        <h2>Findings</h2>
+        <div class="panel-tabs">
+          <button class="tab active" onclick="showTab('vulns')">Vulnerabilities</button>
+          <button class="tab" onclick="showTab('story')">Story</button>
+          <button class="tab" onclick="showTab('fixes')">Fixes</button>
+        </div>
+      </div>
+
+      <!-- Vulnerabilities Tab -->
+      <div id="tab-vulns" class="tab-content active">
+        <div id="riskScore" class="risk-badge risk-none">
+          <span class="risk-value">--</span>
+          <span class="risk-label">Risk Score</span>
+        </div>
+        <div id="complianceStatus" class="compliance-grid"></div>
+        <div id="vulnList" class="vuln-list">
+          <p class="empty-state">No vulnerabilities detected yet. Analyze some code to get started.</p>
+        </div>
+      </div>
+
+      <!-- Story Tab -->
+      <div id="tab-story" class="tab-content">
+        <div id="storyContent" class="story-content">
+          <p class="empty-state">Generate a hardening story to see the interleaved narrative here.</p>
+        </div>
+        <button class="btn btn-secondary" onclick="generateStory()" style="margin-top:1rem">
+          Generate Hardening Story
+        </button>
+      </div>
+
+      <!-- Fixes Tab -->
+      <div id="tab-fixes" class="tab-content">
+        <div id="fixList" class="fix-list">
+          <p class="empty-state">Fixes will appear here after analysis.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>BLACK_VAULT NEXUS LIVE v1.0 | Gemini Live Agent Challenge 2026</span>
+    <span>Powered by Gemini 2.0 Live API + Google Cloud Run</span>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    hljs.highlightAll();
+  </script>
+</body>
+</html>
