@@ -37,6 +37,8 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+Use Node 20.x with npm 10.x to match CI and production builds.
+
 ## Reproducible testing
 
 ```bash
