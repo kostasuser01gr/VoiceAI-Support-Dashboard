@@ -252,14 +252,18 @@ async def live_session_websocket(websocket: WebSocket, session_id: str):
 @app.post("/api/v1/stories")
 async def generate_hardening_story(request: AnalysisRequest):
     """Generate an interleaved multimodal hardening story for the given code."""
-    story = await storyteller.generate_story(
-        code=request.code,
-        filename=request.filename,
-        language=request.language,
-        vulnerability_hint=request.context,
-        frameworks=request.frameworks,
-    )
-    return story
+    try:
+        story = await storyteller.generate_story(
+            code=request.code,
+            filename=request.filename,
+            language=request.language,
+            vulnerability_hint=request.context,
+            frameworks=request.frameworks,
+        )
+        return story
+    except Exception as e:
+        log.warning("story_generation_failed", error=str(e))
+        raise HTTPException(status_code=503, detail="AI service temporarily unavailable") from None
 
 
 @app.post("/api/v1/stories/screenshot")
@@ -468,25 +472,33 @@ class ExplainRequest(BaseModel):
 @app.post("/api/v1/fix")
 async def generate_fix(request: FixRequest):
     """Generate a secure fix for a specific vulnerability."""
-    fix = await fix_generator.generate_fix(
-        code=request.code,
-        vulnerability_type=request.vulnerability_type,
-        line_number=request.line_number,
-        cwe_id=request.cwe_id,
-        language=request.language,
-    )
-    return fix
+    try:
+        fix = await fix_generator.generate_fix(
+            code=request.code,
+            vulnerability_type=request.vulnerability_type,
+            line_number=request.line_number,
+            cwe_id=request.cwe_id,
+            language=request.language,
+        )
+        return fix
+    except Exception as e:
+        log.warning("fix_generation_failed", error=str(e))
+        raise HTTPException(status_code=503, detail="AI service temporarily unavailable") from None
 
 
 @app.post("/api/v1/explain")
 async def explain_vulnerability(request: ExplainRequest):
     """Get a detailed educational explanation of a vulnerability."""
-    explanation = await fix_generator.explain_vulnerability(
-        vulnerability_type=request.vulnerability_type,
-        code=request.code,
-        language=request.language,
-    )
-    return explanation
+    try:
+        explanation = await fix_generator.explain_vulnerability(
+            vulnerability_type=request.vulnerability_type,
+            code=request.code,
+            language=request.language,
+        )
+        return explanation
+    except Exception as e:
+        log.warning("explain_failed", error=str(e))
+        raise HTTPException(status_code=503, detail="AI service temporarily unavailable") from None
 
 
 # ──────────────────────────────────────────────────────────────
