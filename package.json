@@ -43,7 +43,7 @@
     "zustand": "^5.0.11"
   },
   "overrides": {
-    "flatted": ">=3.4.2"
+    "flatted": ">=3.4.1"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^9.6.0",

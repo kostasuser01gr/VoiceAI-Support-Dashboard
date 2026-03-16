@@ -4,9 +4,7 @@ import { useCallback, useState } from "react";
 import { AppNav } from "@/components/app-nav";
 import { Badge, Button, Card, cn } from "@/components/ui/primitives";
 
-const NEXUS_API =
-  process.env.NEXT_PUBLIC_NEXUS_API_URL ??
-  "https://black-vault-nexus-live-690989569474.europe-west1.run.app";
+const NEXUS_API = "/api/nexus";
 
 type SeverityTone = "danger" | "warning" | "info" | "neutral";
 
