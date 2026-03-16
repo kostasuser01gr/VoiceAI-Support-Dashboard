@@ -15,6 +15,7 @@ import base64
 import logging
 import uuid
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from google import genai
 from google.genai import types
@@ -84,20 +85,16 @@ class CodeHardeningLiveAgent:
             f"\n\nFocus compliance analysis on: {', '.join(frameworks)}"
         )
 
-        modalities = ["TEXT"]
+        modalities: list[types.Modality] = [types.Modality.TEXT]
         if voice_enabled:
-            modalities.append("AUDIO")
+            modalities.append(types.Modality.AUDIO)
 
         config = types.LiveConnectConfig(
             response_modalities=modalities,
-            system_instruction=types.Content(
-                parts=[types.Part(text=system_prompt)]
-            ),
+            system_instruction=types.Content(parts=[types.Part(text=system_prompt)]),
             speech_config=types.SpeechConfig(
                 voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                        voice_name="Aoede"
-                    )
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Aoede")
                 )
             ),
         )
@@ -111,8 +108,12 @@ class CodeHardeningLiveAgent:
             vision_enabled=vision_enabled,
         )
 
-        logger.info("Created live session %s (voice=%s, vision=%s)",
-                     session_id, voice_enabled, vision_enabled)
+        logger.info(
+            "Created live session %s (voice=%s, vision=%s)",
+            session_id,
+            voice_enabled,
+            vision_enabled,
+        )
         return session_id
 
     def get_session(self, session_id: str) -> LiveSession | None:
@@ -146,7 +147,7 @@ class LiveSession:
         self.voice_enabled = voice_enabled
         self.vision_enabled = vision_enabled
         self.status = SessionStatus.CREATED
-        self._gemini_session = None
+        self._gemini_session: Any = None
         self._events: list[SessionEvent] = []
         self._interrupt_flag = asyncio.Event()
 
@@ -245,7 +246,7 @@ class LiveSession:
         )
         await self.send_text(prompt)
 
-    async def receive_responses(self) -> AsyncGenerator[dict, None]:
+    async def receive_responses(self) -> AsyncGenerator[dict[str, Any], None]:
         """
         Receive streaming responses from Gemini Live API.
 
@@ -284,19 +285,20 @@ class LiveSession:
                                         "metadata": {},
                                     }
                                 elif part.inline_data:
-                                    audio_b64 = base64.b64encode(
-                                        part.inline_data.data
-                                    ).decode("utf-8")
-                                    self._log_event("audio_out", {
-                                        "bytes": len(part.inline_data.data),
-                                        "mime_type": part.inline_data.mime_type,
-                                    })
+                                    audio_b64 = base64.b64encode(part.inline_data.data).decode(
+                                        "utf-8"
+                                    )
+                                    self._log_event(
+                                        "audio_out",
+                                        {
+                                            "bytes": len(part.inline_data.data),
+                                            "mime_type": part.inline_data.mime_type,
+                                        },
+                                    )
                                     yield {
                                         "type": "audio",
                                         "data": audio_b64,
-                                        "metadata": {
-                                            "mime_type": part.inline_data.mime_type
-                                        },
+                                        "metadata": {"mime_type": part.inline_data.mime_type},
                                     }
 
                     break  # Turn complete, exit outer loop
@@ -318,7 +320,7 @@ class LiveSession:
         self._gemini_session = None
         logger.info("Session %s closed (%d events)", self.session_id, len(self._events))
 
-    def _log_event(self, event_type: str, data: dict) -> None:
+    def _log_event(self, event_type: str, data: dict[str, Any]) -> None:
         self._events.append(
             SessionEvent(
                 session_id=self.session_id,

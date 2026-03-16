@@ -44,7 +44,7 @@ class SessionEvent(BaseModel):
     session_id: str
     event_type: str  # audio_in, audio_out, text_in, text_out, vision, fix, interrupt
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    data: dict = {}
+    data: dict[str, object] = {}
 
 
 class LiveMessage(BaseModel):
@@ -52,4 +52,4 @@ class LiveMessage(BaseModel):
 
     type: str  # audio, text, image, control
     data: str | None = None  # base64 for binary, text for strings
-    metadata: dict = {}
+    metadata: dict[str, object] = {}

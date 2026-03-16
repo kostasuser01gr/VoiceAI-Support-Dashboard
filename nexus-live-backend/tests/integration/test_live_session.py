@@ -7,17 +7,17 @@ from config import Settings
 
 
 @pytest.fixture
-def settings():
+def settings() -> Settings:
     return Settings(gemini_api_key="test-key-not-real")
 
 
 @pytest.fixture
-def agent(settings):
+def agent(settings: Settings) -> CodeHardeningLiveAgent:
     return CodeHardeningLiveAgent(settings)
 
 
 @pytest.mark.anyio
-async def test_create_session(agent):
+async def test_create_session(agent: CodeHardeningLiveAgent) -> None:
     """Creating a session returns a valid session ID."""
     session_id = await agent.create_session(
         voice_enabled=True,
@@ -28,7 +28,7 @@ async def test_create_session(agent):
 
 
 @pytest.mark.anyio
-async def test_get_session(agent):
+async def test_get_session(agent: CodeHardeningLiveAgent) -> None:
     """Can retrieve a created session."""
     session_id = await agent.create_session()
     session = agent.get_session(session_id)
@@ -37,7 +37,7 @@ async def test_get_session(agent):
 
 
 @pytest.mark.anyio
-async def test_end_session(agent):
+async def test_end_session(agent: CodeHardeningLiveAgent) -> None:
     """Ending a session removes it from active sessions."""
     session_id = await agent.create_session()
     await agent.end_session(session_id)
@@ -45,13 +45,13 @@ async def test_end_session(agent):
 
 
 @pytest.mark.anyio
-async def test_end_nonexistent_session(agent):
+async def test_end_nonexistent_session(agent: CodeHardeningLiveAgent) -> None:
     """Ending a nonexistent session doesn't raise."""
     await agent.end_session("nonexistent-session-id")
 
 
 @pytest.mark.anyio
-async def test_multiple_sessions(agent):
+async def test_multiple_sessions(agent: CodeHardeningLiveAgent) -> None:
     """Can create and manage multiple concurrent sessions."""
     ids = [await agent.create_session() for _ in range(5)]
     assert len(set(ids)) == 5

@@ -1,5 +1,7 @@
 """Tests for the FastAPI endpoints."""
 
+from collections.abc import AsyncGenerator
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -7,19 +9,19 @@ from main import app
 
 
 @pytest.fixture
-def anyio_backend():
+def anyio_backend() -> str:
     return "asyncio"
 
 
 @pytest.fixture
-async def client():
+async def client() -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 
 @pytest.mark.anyio
-async def test_health_check(client):
+async def test_health_check(client: AsyncClient) -> None:
     """Health endpoint returns 200 with required fields."""
     response = await client.get("/health")
     assert response.status_code == 200
@@ -33,15 +35,18 @@ async def test_health_check(client):
 
 
 @pytest.mark.anyio
-async def test_analyze_code_sql_injection(client):
+async def test_analyze_code_sql_injection(client: AsyncClient) -> None:
     """Analysis endpoint detects SQL injection."""
-    response = await client.post("/api/v1/analyze", json={
-        "code": 'query = f"SELECT * FROM users WHERE id=\'{user_id}\'"\\ndb.execute(query)',
-        "filename": "test.py",
-        "language": "python",
-        "frameworks": ["OWASP_TOP_10"],
-        "include_fixes": False,
-    })
+    response = await client.post(
+        "/api/v1/analyze",
+        json={
+            "code": "query = f\"SELECT * FROM users WHERE id='{user_id}'\"\\ndb.execute(query)",
+            "filename": "test.py",
+            "language": "python",
+            "frameworks": ["OWASP_TOP_10"],
+            "include_fixes": False,
+        },
+    )
     assert response.status_code == 200
     data = response.json()
     assert "pattern_findings" in data
@@ -49,26 +54,32 @@ async def test_analyze_code_sql_injection(client):
 
 
 @pytest.mark.anyio
-async def test_analyze_clean_code(client):
+async def test_analyze_clean_code(client: AsyncClient) -> None:
     """Analysis endpoint handles clean code."""
-    response = await client.post("/api/v1/analyze", json={
-        "code": "def add(a, b):\\n    return a + b",
-        "filename": "math.py",
-        "language": "python",
-        "include_fixes": False,
-    })
+    response = await client.post(
+        "/api/v1/analyze",
+        json={
+            "code": "def add(a, b):\\n    return a + b",
+            "filename": "math.py",
+            "language": "python",
+            "include_fixes": False,
+        },
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["risk_score"] == 0.0
 
 
 @pytest.mark.anyio
-async def test_create_session(client):
+async def test_create_session(client: AsyncClient) -> None:
     """Session creation endpoint works."""
-    response = await client.post("/api/v1/sessions", json={
-        "voice_enabled": True,
-        "vision_enabled": True,
-    })
+    response = await client.post(
+        "/api/v1/sessions",
+        json={
+            "voice_enabled": True,
+            "vision_enabled": True,
+        },
+    )
     assert response.status_code == 200
     data = response.json()
     assert "session_id" in data
@@ -77,7 +88,7 @@ async def test_create_session(client):
 
 
 @pytest.mark.anyio
-async def test_navigation_history_empty(client):
+async def test_navigation_history_empty(client: AsyncClient) -> None:
     """Navigation history starts empty."""
     response = await client.get("/api/v1/navigate/history")
     assert response.status_code == 200

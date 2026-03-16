@@ -107,7 +107,7 @@ class StorySection(BaseModel):
 
     modality: str  # text, code, image, audio, diagram
     content: str
-    metadata: dict = {}
+    metadata: dict[str, object] = {}
 
 
 # Fix forward reference
