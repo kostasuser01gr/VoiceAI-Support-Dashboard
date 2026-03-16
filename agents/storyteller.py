@@ -323,22 +323,41 @@ class HardeningStorytellerAgent:
 
     def _parse_sections(self, raw_text: str) -> list[dict]:
         """Parse Gemini response into story sections."""
+        def _normalize(data: list | dict) -> list[dict]:
+            """Normalize various JSON shapes into a flat list of sections."""
+            if isinstance(data, list):
+                # Could be list of sections or list of objects with nested sections
+                result = []
+                for item in data:
+                    if isinstance(item, dict):
+                        # Gemini may return {modality, content} or {type, title, content}
+                        if "modality" in item or "content" in item or "type" in item:
+                            result.append(item)
+                        elif "sections" in item:
+                            result.extend(_normalize(item["sections"]))
+                        else:
+                            result.append({"modality": "text", "content": json.dumps(item), "metadata": {}})
+                    else:
+                        result.append({"modality": "text", "content": str(item), "metadata": {}})
+                return result
+            if isinstance(data, dict):
+                if "sections" in data:
+                    return _normalize(data["sections"])
+                return [data]
+            return [{"modality": "text", "content": str(data), "metadata": {}}]
+
         try:
-            # Try direct JSON parse
-            sections = json.loads(raw_text)
-            if isinstance(sections, list):
-                return sections
-            if isinstance(sections, dict) and "sections" in sections:
-                return sections["sections"]
-            return [sections]
+            parsed = json.loads(raw_text)
+            return _normalize(parsed)
         except json.JSONDecodeError:
             # Try extracting JSON from markdown code block
-            if "```json" in raw_text:
-                json_block = raw_text.split("```json")[1].split("```")[0]
-                return json.loads(json_block)
-            elif "```" in raw_text:
-                json_block = raw_text.split("```")[1].split("```")[0]
-                return json.loads(json_block)
+            for prefix in ("```json", "```"):
+                if prefix in raw_text:
+                    try:
+                        json_block = raw_text.split(prefix)[1].split("```")[0]
+                        return _normalize(json.loads(json_block))
+                    except (json.JSONDecodeError, IndexError):
+                        continue
             # Fallback: wrap raw text as single text section
             logger.warning("Could not parse story sections as JSON, using raw text")
             return [{"modality": "text", "content": raw_text, "metadata": {}}]
