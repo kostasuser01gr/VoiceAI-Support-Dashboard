@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated artifacts:
     "coverage/**",
+    // Backend embedded demo JS (standalone browser script):
+    "nexus-live-backend/**",
   ]),
   {
     rules: {
