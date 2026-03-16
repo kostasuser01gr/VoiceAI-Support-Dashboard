@@ -5,7 +5,7 @@ import {
   makeApprovalPayloadHash,
   type ApprovalEvent,
   type SessionAnalysis,
-  type SessionReviewState,
+  type SessionReview,
 } from "@/lib/session-meta";
 
 const STORAGE_KEY = "voice_to_action_sessions_v4";
@@ -30,7 +30,7 @@ export type StoredSession = {
   presetId: PresetId;
   pinned: boolean;
   tags: string[];
-  review: SessionReviewState;
+  review: SessionReview;
   analysis: SessionAnalysis;
   approvalEvents: ApprovalEvent[];
   data: ProcessResponse;
@@ -49,7 +49,7 @@ type LegacySession = {
   presetId?: string;
   pinned?: boolean;
   tags?: string[];
-  review?: SessionReviewState;
+  review?: SessionReview;
   analysis?: SessionAnalysis;
   approvalEvents?: ApprovalEvent[];
   data?: ProcessResponse;

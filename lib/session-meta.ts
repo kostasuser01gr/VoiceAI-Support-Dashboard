@@ -37,7 +37,7 @@ export type ApprovalEvent = {
   payloadHash: string;
 };
 
-export type SessionReviewState = {
+export type SessionReview = {
   emailApproved: boolean;
   tasksApproved: boolean;
   executed: boolean;
@@ -62,7 +62,7 @@ export type OpenLoopItem = {
   urgency: SessionUrgency;
 };
 
-export function defaultSessionReview(): SessionReviewState {
+export function defaultSessionReview(): SessionReview {
   return {
     emailApproved: false,
     tasksApproved: false,

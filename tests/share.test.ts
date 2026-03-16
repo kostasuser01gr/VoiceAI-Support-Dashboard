@@ -195,8 +195,7 @@ describe("share tokens", () => {
           openLoops: [],
         },
         auditTrail: [],
-        meta: {
-          requestId: "req-3",
+        meta: {          requestId: "req-3",
           model: "gemini-2.0-flash",
           latencyMs: 1,
           validation: "passed",

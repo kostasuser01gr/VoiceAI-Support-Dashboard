@@ -216,20 +216,6 @@ export default function ActionsPage() {
     );
   }, [filteredRows]);
 
-  const groupedCounts = useMemo(() => {
-    return filteredRows.reduce(
-      (acc, row) => {
-        const status = toReviewStatus(row.review);
-        acc[status] += 1;
-        return acc;
-      },
-      {
-        pending: 0,
-        approved: 0,
-        executed: 0,
-      } as Record<ReviewStatus, number>,
-    );
-  }, [filteredRows]);
 
   const allVisibleSelected =
     filteredRows.length > 0 &&
@@ -310,10 +296,10 @@ export default function ActionsPage() {
                 setStatusFilter(value as ReviewStatus | "all")
               }
               tabs={[
-                { value: "pending", label: "Pending", count: groupedCounts.pending },
-                { value: "approved", label: "Approved", count: groupedCounts.approved },
-                { value: "executed", label: "Executed", count: groupedCounts.executed },
-                { value: "all", label: "All", count: filteredRows.length },
+                { id: "pending", label: "Pending" },
+                { id: "approved", label: "Approved" },
+                { id: "executed", label: "Executed" },
+                { id: "all", label: "All" },
               ]}
             />
             <div className="flex flex-wrap items-center gap-2">

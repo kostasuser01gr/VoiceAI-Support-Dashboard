@@ -192,7 +192,7 @@ export function VoiceActionDashboard({
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(null), 2500);
     return () => window.clearTimeout(timer);
-  }, [toast]);
+  }, [toast, setToast]);
 
   useEffect(() => {
     if (voiceError && voiceError !== "unsupported") {
