@@ -5,8 +5,10 @@
 FROM node:20.19-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-# Use ci for deterministic, lock-file-driven installs
-RUN npm ci --ignore-scripts
+# npm install instead of npm ci: npm ci errors on EBADPLATFORM for optional
+# platform-specific packages (e.g. @esbuild/aix-ppc64) generated on a different
+# host OS; npm install warns and skips them gracefully.
+RUN npm install --ignore-scripts
 
 # ── builder ───────────────────────────────────────────────────────────────────
 FROM node:20.19-alpine AS builder
