@@ -35,6 +35,6 @@ export async function POST(req: Request) {
     return result.toTextStreamResponse();
   } catch (error) {
     console.error("Streaming error", error);
-    return new Response(JSON.stringify({ error: String(error) }), { status: 500 });
+    return new Response(JSON.stringify({ error: "Streaming request failed." }), { status: 500 });
   }
 }

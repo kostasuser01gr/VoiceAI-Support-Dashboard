@@ -84,6 +84,75 @@ describe("share tokens", () => {
     expect(parsed?.session.id).toBe("s1");
   });
 
+  it("validates password-protected share token only with the correct password", async () => {
+    const token = createShareToken(
+      {
+        id: "s1-password",
+        createdAt: "2026-03-02T10:00:00.000Z",
+        workspaceId: "default-workspace",
+        presetId: "support_recap",
+        pinned: false,
+        tags: [],
+        review: {
+          emailApproved: false,
+          tasksApproved: false,
+          executed: false,
+          taskOwners: {},
+          comments: [],
+        },
+        analysis: {
+          index: {
+            entities: [],
+            topics: [],
+            urgency: "low",
+            sentiment: "neutral",
+            openLoops: [],
+            openLoopsCount: 0,
+          },
+          verifier: {
+            ok: true,
+            score: 100,
+            flags: [],
+            policy: "warn",
+          },
+        },
+        approvalEvents: [],
+        data: {
+          inputMode: "text",
+          transcript: "Please send update.",
+          summary: "An update should be sent.",
+          actions: {
+            taskList: ["Send update"],
+            emailDraft:
+              "Subject: Update\n\nSharing a short update.\n\nPlease review before sending.",
+          },
+          intelligence: {
+            topics: ["update"],
+            entities: [],
+            urgency: "low" as const,
+            sentiment: "neutral" as const,
+            openLoops: [],
+          },
+          auditTrail: [
+            { step: "capture", timestamp: "2026-03-02T10:00:00.000Z", details: "Captured" },
+          ],
+          meta: {
+            requestId: "req-1-password",
+            model: "gemini-2.0-flash",
+            latencyMs: 12,
+            validation: "passed",
+            fallbackUsed: false,
+            approvalRequired: false,
+          },
+        },
+      },
+      { password: "correct horse battery staple" },
+    );
+
+    expect(await parseShareToken(token, { password: "correct horse battery staple" })).not.toBeNull();
+    expect(await parseShareToken(token, { password: "wrong password" })).toBeNull();
+  });
+
   it("expires share token based on configured ttl", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-02T10:00:00.000Z"));

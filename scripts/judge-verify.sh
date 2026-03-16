@@ -25,6 +25,8 @@ npm run eval
 
 echo ""
 echo "==> build"
+# Next can leave a stale local lock behind between repeated judge runs.
+rm -f .next/lock
 npm run build
 
 echo ""
@@ -33,4 +35,3 @@ npm run verify:screenshots
 
 echo ""
 echo "Judge verification completed successfully."
-

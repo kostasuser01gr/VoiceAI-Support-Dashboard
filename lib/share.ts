@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, scryptSync, timingSafeEqual } from "node:crypto";
 
 import { getAppConfig } from "@/lib/config";
 import { isDbHistoryEnabled, isShareTokenRevoked, revokeShareToken } from "@/lib/db";
@@ -54,13 +54,8 @@ function signPayload(payloadEncoded: string) {
 }
 
 function hashPassword(password: string) {
-  // Use HMAC-SHA256 keyed by the share secret so brute-forcing requires
-  // knowledge of the server-side secret (equivalent to an offline attack
-  // against a properly-managed secret). Upgrade to Argon2/scrypt if the
-  // secret ever becomes externally observable.
-  return createHmac("sha256", getSecret())
-    .update(`share-password:${password}`)
-    .digest("hex");
+  const salt = `share-password:${getSecret()}`;
+  return scryptSync(password, salt, 32).toString("hex");
 }
 
 export function hashShareToken(token: string) {

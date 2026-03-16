@@ -51,6 +51,12 @@ npm run scan
 npm run judge:verify
 ```
 
+## Governance and operations
+
+- Contribution workflow: `CONTRIBUTING.md`
+- Security reporting and production safeguards: `SECURITY.md`
+- Autonomous stabilization ledger: `docs/autonomous-ops-ledger.md`
+
 ## Tech stack
 
 - Next.js (App Router, TypeScript)
