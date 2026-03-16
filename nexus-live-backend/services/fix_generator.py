@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 from textwrap import dedent
+from typing import Any
 
 from google import genai
 from google.genai import types
@@ -63,7 +64,7 @@ class FixGenerator:
         line_number: int | None = None,
         cwe_id: str | None = None,
         language: str = "python",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Generate a fix for a specific vulnerability.
 
@@ -105,7 +106,7 @@ class FixGenerator:
                 ),
             )
 
-            result = self._parse_response(response.text)
+            result = self._parse_response(response.text or "")
             logger.info("Generated fix for %s (line %s)", vulnerability_type, line_number)
             return result
 
@@ -116,9 +117,9 @@ class FixGenerator:
     async def generate_batch_fixes(
         self,
         code: str,
-        vulnerabilities: list[dict],
+        vulnerabilities: list[dict[str, Any]],
         language: str = "python",
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Generate fixes for multiple vulnerabilities in a single code block."""
         vuln_list = "\n".join(
             f"- {v.get('type', 'Unknown')}: line {v.get('line_number', '?')} "
@@ -163,15 +164,17 @@ class FixGenerator:
             ),
         )
 
-        result = self._parse_response(response.text)
-        return result.get("fixes", [result]) if isinstance(result, dict) else [result]
+        result = self._parse_response(response.text or "")
+        fixes_raw: Any = result.get("fixes", [result]) if isinstance(result, dict) else [result]
+        fixes: list[dict[str, Any]] = fixes_raw
+        return fixes
 
     async def explain_vulnerability(
         self,
         vulnerability_type: str,
         code: str,
         language: str = "python",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Generate a detailed educational explanation of a vulnerability."""
         prompt = dedent(f"""\
             Explain this vulnerability in detail for an engineer who wants to understand
@@ -205,18 +208,20 @@ class FixGenerator:
             ),
         )
 
-        return self._parse_response(response.text)
+        return self._parse_response(response.text or "")
 
-    def _parse_response(self, raw_text: str) -> dict:
+    def _parse_response(self, raw_text: str) -> dict[str, Any]:
         try:
             result = json.loads(raw_text)
-            return result if isinstance(result, dict) else {"data": result}
+            result_val: dict[str, Any] = result if isinstance(result, dict) else {"data": result}
+            return result_val
         except json.JSONDecodeError:
             pass
         try:
             if "```json" in raw_text:
                 block = raw_text.split("```json")[1].split("```")[0]
-                return json.loads(block)
+                parsed: dict[str, Any] = json.loads(block)
+                return parsed
         except (json.JSONDecodeError, IndexError):
             pass
         return {"raw_response": raw_text[:1000]}

@@ -13,8 +13,10 @@ from __future__ import annotations
 import json
 import logging
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from textwrap import dedent
+from typing import Any
 
 from google import genai
 from google.genai import types
@@ -91,15 +93,15 @@ class CodeHardeningUINavigator:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.client = genai.Client(api_key=settings.gemini_api_key)
-        self._analysis_history: list[dict] = []
+        self._analysis_history: list[dict[str, Any]] = []
 
     async def analyze_screenshot(
         self,
         image_data: bytes,
         mime_type: str = "image/png",
         context: str | None = None,
-        previous_analysis: dict | None = None,
-    ) -> dict:
+        previous_analysis: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Analyze an IDE screenshot for security vulnerabilities.
 
@@ -113,9 +115,7 @@ class CodeHardeningUINavigator:
             Structured analysis with vulnerabilities and suggested actions
         """
         parts = [
-            types.Part(
-                inline_data=types.Blob(mime_type=mime_type, data=image_data)
-            ),
+            types.Part(inline_data=types.Blob(mime_type=mime_type, data=image_data)),
         ]
 
         prompt_text = "Analyze this IDE screenshot for security vulnerabilities."
@@ -142,7 +142,7 @@ class CodeHardeningUINavigator:
                 ),
             )
 
-            analysis = self._parse_analysis(response.text)
+            analysis = self._parse_analysis(response.text or "")
             analysis["analysis_id"] = f"nav-{uuid.uuid4().hex[:8]}"
             analysis["timestamp"] = datetime.now(UTC).isoformat()
 
@@ -163,9 +163,9 @@ class CodeHardeningUINavigator:
     async def analyze_code_region(
         self,
         image_data: bytes,
-        region: dict,
+        region: dict[str, int],
         mime_type: str = "image/png",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Analyze a specific region of the screen (e.g., a single function).
 
@@ -175,16 +175,16 @@ class CodeHardeningUINavigator:
             mime_type: Image MIME type
         """
         parts = [
+            types.Part(inline_data=types.Blob(mime_type=mime_type, data=image_data)),
             types.Part(
-                inline_data=types.Blob(mime_type=mime_type, data=image_data)
-            ),
-            types.Part(text=dedent(f"""\
+                text=dedent(f"""\
                 Focus your analysis on the code region at approximately:
-                x={region.get('x', 0)}, y={region.get('y', 0)},
-                width={region.get('width', 800)}, height={region.get('height', 600)}
+                x={region.get("x", 0)}, y={region.get("y", 0)},
+                width={region.get("width", 800)}, height={region.get("height", 600)}
 
                 Analyze ONLY the code in that region for security vulnerabilities.
-                Return the standard JSON analysis format.""")),
+                Return the standard JSON analysis format.""")
+            ),
         ]
 
         response = await self.client.aio.models.generate_content(
@@ -198,9 +198,9 @@ class CodeHardeningUINavigator:
             ),
         )
 
-        return self._parse_analysis(response.text)
+        return self._parse_analysis(response.text or "")
 
-    async def generate_fix_overlay(self, analysis: dict) -> list[dict]:
+    async def generate_fix_overlay(self, analysis: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Generate UI overlay instructions for the IDE based on analysis results.
 
@@ -224,35 +224,41 @@ class CodeHardeningUINavigator:
             color = color_map.get(severity, "#d29922")
 
             if line:
-                overlays.append({
-                    "type": "line_highlight",
-                    "line": line,
-                    "color": color,
-                    "tooltip": f"[{severity}] {vuln.get('title', '')}",
-                })
+                overlays.append(
+                    {
+                        "type": "line_highlight",
+                        "line": line,
+                        "color": color,
+                        "tooltip": f"[{severity}] {vuln.get('title', '')}",
+                    }
+                )
 
         for action in analysis.get("suggested_actions", []):
             if action.get("action") in ("show_fix", "auto_fix") and action.get("fix_code"):
-                overlays.append({
-                    "type": "fix_panel",
-                    "target_line": action.get("target"),
-                    "title": f"Fix: {action.get('description', '')}",
-                    "fix_code": action["fix_code"],
-                    "auto_applicable": action["action"] == "auto_fix",
-                })
+                overlays.append(
+                    {
+                        "type": "fix_panel",
+                        "target_line": action.get("target"),
+                        "title": f"Fix: {action.get('description', '')}",
+                        "fix_code": action["fix_code"],
+                        "auto_applicable": action["action"] == "auto_fix",
+                    }
+                )
             elif action.get("action") == "show_warning":
-                overlays.append({
-                    "type": "warning_badge",
-                    "target_line": action.get("target"),
-                    "message": action.get("description", ""),
-                })
+                overlays.append(
+                    {
+                        "type": "warning_badge",
+                        "target_line": action.get("target"),
+                        "message": action.get("description", ""),
+                    }
+                )
 
         return overlays
 
     async def continuous_monitor(
         self,
-        capture_callback,
-        on_finding,
+        capture_callback: Callable[[], Awaitable[tuple[bytes, str]]],
+        on_finding: Callable[[dict[str, Any]], Awaitable[None]],
         interval_seconds: float = 3.0,
         max_iterations: int = 100,
     ) -> None:
@@ -285,10 +291,10 @@ class CodeHardeningUINavigator:
 
             await asyncio.sleep(interval_seconds)
 
-    def get_analysis_history(self) -> list[dict]:
+    def get_analysis_history(self) -> list[dict[str, Any]]:
         return list(self._analysis_history)
 
-    def get_risk_trend(self) -> list[dict]:
+    def get_risk_trend(self) -> list[dict[str, Any]]:
         """Get risk level over time from analysis history."""
         return [
             {
@@ -299,10 +305,10 @@ class CodeHardeningUINavigator:
             for a in self._analysis_history
         ]
 
-    def _parse_analysis(self, raw_text: str) -> dict:
+    def _parse_analysis(self, raw_text: str) -> dict[str, Any]:
         """Parse Gemini response into structured analysis."""
         try:
-            result = json.loads(raw_text)
+            result: dict[str, Any] = json.loads(raw_text)
             if isinstance(result, dict):
                 return result
         except json.JSONDecodeError:
@@ -312,10 +318,12 @@ class CodeHardeningUINavigator:
         try:
             if "```json" in raw_text:
                 json_block = raw_text.split("```json")[1].split("```")[0]
-                return json.loads(json_block)
+                parsed: dict[str, Any] = json.loads(json_block)
+                return parsed
             elif "```" in raw_text:
                 json_block = raw_text.split("```")[1].split("```")[0]
-                return json.loads(json_block)
+                parsed2: dict[str, Any] = json.loads(json_block)
+                return parsed2
         except (json.JSONDecodeError, IndexError):
             pass
 

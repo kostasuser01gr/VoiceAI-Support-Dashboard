@@ -13,8 +13,10 @@ import json
 import logging
 import os
 import uuid
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
@@ -43,7 +45,8 @@ structlog.configure(
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
-        structlog.dev.ConsoleRenderer() if os.environ.get("APP_ENV") != "production"
+        structlog.dev.ConsoleRenderer()
+        if os.environ.get("APP_ENV") != "production"
         else structlog.processors.JSONRenderer(),
     ],
     wrapper_class=structlog.make_filtering_bound_logger(
@@ -67,7 +70,7 @@ fix_generator = FixGenerator(settings)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     log.info("nexus_starting", env=settings.app_env, region=settings.gcp_region)
     yield
     log.info("nexus_shutdown")
@@ -108,8 +111,9 @@ app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 # Health & System Endpoints
 # ──────────────────────────────────────────────────────────────
 
+
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, Any]:
     """Proof of Cloud Run deployment — required for submission."""
     return {
         "status": "healthy",
@@ -132,7 +136,7 @@ async def health_check():
 
 
 @app.get("/ready")
-async def readiness_check():
+async def readiness_check() -> dict[str, bool]:
     """Kubernetes/Cloud Run readiness probe."""
     if not settings.gemini_api_key:
         raise HTTPException(503, "Gemini API key not configured")
@@ -143,8 +147,9 @@ async def readiness_check():
 # CATEGORY 1: Live Agent (Real-time Voice + Vision)
 # ──────────────────────────────────────────────────────────────
 
+
 @app.post("/api/v1/sessions")
-async def create_live_session(request: SessionCreate):
+async def create_live_session(request: SessionCreate) -> dict[str, Any]:
     """Create a new live hardening session with Gemini Live API."""
     session_id = await live_agent.create_session(
         voice_enabled=request.voice_enabled,
@@ -166,7 +171,7 @@ async def create_live_session(request: SessionCreate):
 
 
 @app.websocket("/ws/live/{session_id}")
-async def live_session_websocket(websocket: WebSocket, session_id: str):
+async def live_session_websocket(websocket: WebSocket, session_id: str) -> None:
     """
     WebSocket endpoint for real-time live agent interaction.
 
@@ -226,11 +231,13 @@ async def live_session_websocket(websocket: WebSocket, session_id: str):
             elif msg_type == "control":
                 if msg["data"] == "interrupt":
                     await session.interrupt()
-                    await websocket.send_json({
-                        "type": "text",
-                        "data": "[Interrupt acknowledged]",
-                        "metadata": {},
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "text",
+                            "data": "[Interrupt acknowledged]",
+                            "metadata": {},
+                        }
+                    )
                 elif msg["data"] == "end":
                     await live_agent.end_session(session_id)
                     await websocket.send_json({"type": "end", "data": "Session ended"})
@@ -249,8 +256,9 @@ async def live_session_websocket(websocket: WebSocket, session_id: str):
 # CATEGORY 2: Creative Storyteller (Multimodal Narrative)
 # ──────────────────────────────────────────────────────────────
 
+
 @app.post("/api/v1/stories")
-async def generate_hardening_story(request: AnalysisRequest):
+async def generate_hardening_story(request: AnalysisRequest) -> dict[str, Any]:
     """Generate an interleaved multimodal hardening story for the given code."""
     try:
         story = await storyteller.generate_story(
@@ -267,7 +275,7 @@ async def generate_hardening_story(request: AnalysisRequest):
 
 
 @app.post("/api/v1/stories/screenshot")
-async def generate_story_from_screenshot(file: UploadFile = File(...)):
+async def generate_story_from_screenshot(file: UploadFile = File(...)) -> dict[str, Any]:
     """Generate a hardening story from an IDE screenshot."""
     image_data = await file.read()
     mime_type = file.content_type or "image/png"
@@ -284,7 +292,7 @@ async def generate_comparative_story(
     vulnerable_code: str,
     secure_code: str,
     language: str = "python",
-):
+) -> dict[str, Any]:
     """Generate a before/after comparison story."""
     story = await storyteller.generate_comparative_story(
         vulnerable_code=vulnerable_code,
@@ -295,7 +303,7 @@ async def generate_comparative_story(
 
 
 @app.get("/api/v1/stories/{story_id}/html")
-async def render_story_html(story_id: str):
+async def render_story_html(story_id: str) -> HTMLResponse:
     """Render a hardening story as rich HTML with Mermaid diagrams."""
     # In production, fetch from Firestore. For demo, generate a sample.
     sample_story = {
@@ -317,8 +325,11 @@ async def render_story_html(story_id: str):
 # CATEGORY 3: UI Navigator (Vision-Powered IDE Analysis)
 # ──────────────────────────────────────────────────────────────
 
+
 @app.post("/api/v1/navigate/analyze")
-async def analyze_ide_screenshot(file: UploadFile = File(...), context: str | None = None):
+async def analyze_ide_screenshot(
+    file: UploadFile = File(...), context: str | None = None
+) -> dict[str, Any]:
     """
     Analyze an IDE screenshot for security vulnerabilities.
 
@@ -337,7 +348,7 @@ async def analyze_ide_screenshot(file: UploadFile = File(...), context: str | No
 
 
 @app.post("/api/v1/navigate/overlay")
-async def generate_fix_overlay(file: UploadFile = File(...)):
+async def generate_fix_overlay(file: UploadFile = File(...)) -> dict[str, Any]:
     """
     Analyze screenshot and return overlay instructions for IDE plugin.
 
@@ -363,7 +374,7 @@ async def generate_fix_overlay(file: UploadFile = File(...)):
 
 
 @app.get("/api/v1/navigate/history")
-async def get_navigation_history():
+async def get_navigation_history() -> dict[str, Any]:
     """Get UI navigator analysis history with risk trend."""
     return {
         "history": ui_navigator.get_analysis_history()[-20:],
@@ -375,21 +386,27 @@ async def get_navigation_history():
 # Code Analysis & Fix Generation (Supporting Services)
 # ──────────────────────────────────────────────────────────────
 
+
 @app.post("/api/v1/analyze")
-async def analyze_code(request: AnalysisRequest):
+async def analyze_code(request: AnalysisRequest) -> dict[str, Any]:
     """
     Analyze code for security vulnerabilities.
 
     Combines fast pattern-based scanning with deep AI analysis.
     """
     import time
+
     start = time.monotonic()
 
     # Fast pattern-based analysis
     pattern_findings = code_analyzer.analyze(request.code, request.filename)
 
     # Deep AI-powered analysis (gracefully degrades if API unavailable)
-    deep_scan: dict = {"vulnerabilities": [], "positive_findings": [], "recommendations": []}
+    deep_scan: dict[str, Any] = {
+        "vulnerabilities": [],
+        "positive_findings": [],
+        "recommendations": [],
+    }
     try:
         deep_scan = await vuln_scanner.deep_scan(
             code=request.code,
@@ -470,7 +487,7 @@ class ExplainRequest(BaseModel):
 
 
 @app.post("/api/v1/fix")
-async def generate_fix(request: FixRequest):
+async def generate_fix(request: FixRequest) -> dict[str, Any]:
     """Generate a secure fix for a specific vulnerability."""
     try:
         fix = await fix_generator.generate_fix(
@@ -487,7 +504,7 @@ async def generate_fix(request: FixRequest):
 
 
 @app.post("/api/v1/explain")
-async def explain_vulnerability(request: ExplainRequest):
+async def explain_vulnerability(request: ExplainRequest) -> dict[str, Any]:
     """Get a detailed educational explanation of a vulnerability."""
     try:
         explanation = await fix_generator.explain_vulnerability(
@@ -505,8 +522,9 @@ async def explain_vulnerability(request: ExplainRequest):
 # Frontend
 # ──────────────────────────────────────────────────────────────
 
+
 @app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
+async def serve_frontend() -> HTMLResponse:
     """Serve the main frontend application."""
     with open("frontend/index.html") as f:
         return HTMLResponse(content=f.read())

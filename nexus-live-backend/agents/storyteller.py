@@ -18,6 +18,7 @@ import logging
 import uuid
 from datetime import UTC, datetime
 from textwrap import dedent
+from typing import Any
 
 from google import genai
 from google.genai import types
@@ -81,7 +82,7 @@ class HardeningStorytellerAgent:
         language: str = "python",
         vulnerability_hint: str | None = None,
         frameworks: list[ComplianceFramework] | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Generate a complete hardening story for the given code.
 
@@ -121,7 +122,7 @@ class HardeningStorytellerAgent:
                 ),
             )
 
-            sections = self._parse_sections(response.text)
+            sections = self._parse_sections(response.text or "")
 
             story_id = f"story-{uuid.uuid4().hex[:8]}"
             return {
@@ -144,7 +145,7 @@ class HardeningStorytellerAgent:
         image_data: bytes,
         mime_type: str = "image/png",
         context: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Generate a hardening story from an IDE screenshot.
 
@@ -152,10 +153,9 @@ class HardeningStorytellerAgent:
         a full interleaved narrative.
         """
         parts = [
+            types.Part(inline_data=types.Blob(mime_type=mime_type, data=image_data)),
             types.Part(
-                inline_data=types.Blob(mime_type=mime_type, data=image_data)
-            ),
-            types.Part(text=dedent(f"""\
+                text=dedent(f"""\
                 Look at this IDE screenshot. Identify the code visible on screen.
 
                 1. First, transcribe the visible code exactly as shown.
@@ -165,7 +165,8 @@ class HardeningStorytellerAgent:
                 {"Additional context: " + context if context else ""}
 
                 Each section should have: modality, content, metadata.
-                Return ONLY the JSON array.""")),
+                Return ONLY the JSON array.""")
+            ),
         ]
 
         try:
@@ -180,7 +181,7 @@ class HardeningStorytellerAgent:
                 ),
             )
 
-            sections = self._parse_sections(response.text)
+            sections = self._parse_sections(response.text or "")
 
             story_id = f"story-vis-{uuid.uuid4().hex[:8]}"
             return {
@@ -201,7 +202,7 @@ class HardeningStorytellerAgent:
         vulnerable_code: str,
         secure_code: str,
         language: str = "python",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Generate a story comparing vulnerable vs. secure implementations."""
         prompt = dedent(f"""\
             Compare these two code versions and generate a hardening story explaining
@@ -234,7 +235,7 @@ class HardeningStorytellerAgent:
             ),
         )
 
-        sections = self._parse_sections(response.text)
+        sections = self._parse_sections(response.text or "")
         story_id = f"story-cmp-{uuid.uuid4().hex[:8]}"
 
         return {
@@ -245,33 +246,33 @@ class HardeningStorytellerAgent:
             "section_count": len(sections),
         }
 
-    def render_story_html(self, story: dict) -> str:
+    def render_story_html(self, story: dict[str, Any]) -> str:
         """Render a story as rich HTML with embedded Mermaid diagrams."""
         html_parts = [
-            '<!DOCTYPE html><html><head>',
+            "<!DOCTYPE html><html><head>",
             '<meta charset="utf-8">',
-            '<title>Hardening Story</title>',
+            "<title>Hardening Story</title>",
             '<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>',
             '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">',
             '<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>',
-            '<style>',
+            "<style>",
             'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; ',
-            '  max-width: 900px; margin: 0 auto; padding: 2rem; background: #0d1117; color: #c9d1d9; }',
-            'h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 0.5rem; }',
-            'h2 { color: #7ee787; }',
-            '.section { margin: 1.5rem 0; padding: 1rem; border-radius: 8px; }',
-            '.section-text { background: #161b22; border-left: 4px solid #58a6ff; }',
-            '.section-code { background: #0d1117; }',
-            '.section-diagram { background: #161b22; border-left: 4px solid #7ee787; text-align: center; }',
-            '.section-checklist { background: #161b22; border-left: 4px solid #d29922; }',
-            '.severity-P0 { border-color: #f85149; }',
-            '.severity-P1 { border-color: #db6d28; }',
-            'pre { background: #0d1117; padding: 1rem; border-radius: 6px; overflow-x: auto; }',
+            "  max-width: 900px; margin: 0 auto; padding: 2rem; background: #0d1117; color: #c9d1d9; }",
+            "h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 0.5rem; }",
+            "h2 { color: #7ee787; }",
+            ".section { margin: 1.5rem 0; padding: 1rem; border-radius: 8px; }",
+            ".section-text { background: #161b22; border-left: 4px solid #58a6ff; }",
+            ".section-code { background: #0d1117; }",
+            ".section-diagram { background: #161b22; border-left: 4px solid #7ee787; text-align: center; }",
+            ".section-checklist { background: #161b22; border-left: 4px solid #d29922; }",
+            ".severity-P0 { border-color: #f85149; }",
+            ".severity-P1 { border-color: #db6d28; }",
+            "pre { background: #0d1117; padding: 1rem; border-radius: 6px; overflow-x: auto; }",
             'code { font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 0.9rem; }',
-            '.mermaid { background: #fff; padding: 1rem; border-radius: 6px; }',
-            '</style></head><body>',
-            f'<h1>Hardening Story: {story.get("story_id", "")}</h1>',
-            f'<p><em>Generated: {story.get("generated_at", "")}</em></p>',
+            ".mermaid { background: #fff; padding: 1rem; border-radius: 6px; }",
+            "</style></head><body>",
+            f"<h1>Hardening Story: {story.get('story_id', '')}</h1>",
+            f"<p><em>Generated: {story.get('generated_at', '')}</em></p>",
         ]
 
         for section in story.get("sections", []):
@@ -286,20 +287,20 @@ class HardeningStorytellerAgent:
             if modality == "text":
                 html_parts.append(
                     f'<div class="section section-text{severity_class}">'
-                    f'{f"<h2>{title}</h2>" if title else ""}'
-                    f'<p>{content}</p></div>'
+                    f"{f'<h2>{title}</h2>' if title else ''}"
+                    f"<p>{content}</p></div>"
                 )
             elif modality == "code":
                 lang = metadata.get("language", "python")
                 html_parts.append(
                     f'<div class="section section-code">'
-                    f'{f"<h2>{title}</h2>" if title else ""}'
+                    f"{f'<h2>{title}</h2>' if title else ''}"
                     f'<pre><code class="language-{lang}">{content}</code></pre></div>'
                 )
             elif modality == "diagram":
                 html_parts.append(
                     f'<div class="section section-diagram">'
-                    f'{f"<h2>{title}</h2>" if title else ""}'
+                    f"{f'<h2>{title}</h2>' if title else ''}"
                     f'<div class="mermaid">{content}</div></div>'
                 )
             elif modality == "checklist":
@@ -309,21 +310,24 @@ class HardeningStorytellerAgent:
                 )
                 html_parts.append(
                     f'<div class="section section-checklist">'
-                    f'{f"<h2>{title}</h2>" if title else ""}'
-                    f'<ul>{items_html}</ul></div>'
+                    f"{f'<h2>{title}</h2>' if title else ''}"
+                    f"<ul>{items_html}</ul></div>"
                 )
 
-        html_parts.extend([
-            '<script>mermaid.initialize({startOnLoad:true, theme:"dark"});</script>',
-            '<script>hljs.highlightAll();</script>',
-            '</body></html>',
-        ])
+        html_parts.extend(
+            [
+                '<script>mermaid.initialize({startOnLoad:true, theme:"dark"});</script>',
+                "<script>hljs.highlightAll();</script>",
+                "</body></html>",
+            ]
+        )
 
         return "\n".join(html_parts)
 
-    def _parse_sections(self, raw_text: str) -> list[dict]:
+    def _parse_sections(self, raw_text: str) -> list[dict[str, Any]]:
         """Parse Gemini response into story sections."""
-        def _normalize(data: list | dict) -> list[dict]:
+
+        def _normalize(data: list[Any] | dict[str, Any]) -> list[dict[str, Any]]:
             """Normalize various JSON shapes into a flat list of sections."""
             if isinstance(data, list):
                 # Could be list of sections or list of objects with nested sections
@@ -336,7 +340,9 @@ class HardeningStorytellerAgent:
                         elif "sections" in item:
                             result.extend(_normalize(item["sections"]))
                         else:
-                            result.append({"modality": "text", "content": json.dumps(item), "metadata": {}})
+                            result.append(
+                                {"modality": "text", "content": json.dumps(item), "metadata": {}}
+                            )
                     else:
                         result.append({"modality": "text", "content": str(item), "metadata": {}})
                 return result

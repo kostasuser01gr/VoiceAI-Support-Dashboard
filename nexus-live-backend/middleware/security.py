@@ -5,9 +5,11 @@ from __future__ import annotations
 import logging
 import time
 from collections import defaultdict
+from collections.abc import Awaitable, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
 
 logger = logging.getLogger(__name__)
 
@@ -15,16 +17,16 @@ logger = logging.getLogger(__name__)
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        response = await call_next(request)
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        response: Response = await call_next(request)
 
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = (
-            "camera=(), microphone=(self), geolocation=()"
-        )
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
@@ -41,25 +43,26 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Simple in-memory rate limiter (use Redis in production)."""
 
-    def __init__(self, app, max_requests: int = 60, window_seconds: int = 60):
+    def __init__(self, app: ASGIApp, max_requests: int = 60, window_seconds: int = 60):
         super().__init__(app)
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self._requests: dict[str, list[float]] = defaultdict(list)
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         # Skip rate limiting for health checks
         if request.url.path in ("/health", "/healthz", "/ready"):
-            return await call_next(request)
+            response: Response = await call_next(request)
+            return response
 
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
         cutoff = now - self.window_seconds
 
         # Clean old entries
-        self._requests[client_ip] = [
-            t for t in self._requests[client_ip] if t > cutoff
-        ]
+        self._requests[client_ip] = [t for t in self._requests[client_ip] if t > cutoff]
 
         if len(self._requests[client_ip]) >= self.max_requests:
             logger.warning("Rate limit exceeded for %s", client_ip)

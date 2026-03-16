@@ -14,9 +14,9 @@ const bodyFont = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "voice-to-action-agent",
+  title: "BLACK_VAULT NEXUS LIVE | Voice-to-Action + Code Hardening",
   description:
-    "Voice to Action Agent demo app: transcript, summary, tasks, email draft, and audit trail.",
+    "AI-powered voice-to-action agent with real-time code hardening, vulnerability scanning, and compliance analysis. Powered by Gemini Live API.",
 };
 
 export default function RootLayout({

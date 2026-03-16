@@ -4,6 +4,7 @@ import { cn } from "@/components/ui/primitives";
 
 type NavKey =
   | "dashboard"
+  | "hardening"
   | "actions"
   | "history"
   | "integrations"
@@ -12,6 +13,7 @@ type NavKey =
 
 const navItems: Array<{ key: NavKey; href: string; label: string }> = [
   { key: "dashboard", href: "/", label: "Dashboard" },
+  { key: "hardening", href: "/hardening", label: "Hardening" },
   { key: "actions", href: "/actions", label: "Actions" },
   { key: "history", href: "/history", label: "History" },
   { key: "integrations", href: "/integrations", label: "Integrations" },

@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Finding:
     """A security finding from static analysis."""
+
     rule_id: str
     title: str
     description: str
@@ -32,7 +33,7 @@ class Finding:
 
 
 # Vulnerability detection patterns organized by severity
-PATTERNS: list[dict] = [
+PATTERNS: list[dict[str, object]] = [
     # P0 — CRITICAL
     {
         "rule_id": "SEC-001",
@@ -204,7 +205,7 @@ class CodeAnalyzer:
 
             for match in regex.finditer(code):
                 # Calculate line number from match position
-                line_num = code[:match.start()].count("\n") + 1
+                line_num = code[: match.start()].count("\n") + 1
                 line_content = lines[line_num - 1].strip() if line_num <= len(lines) else ""
 
                 finding = Finding(
