@@ -142,12 +142,12 @@ export default function HistoryComparePage() {
           <div className="mt-4 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
             <Input
               value={idA}
-              onChange={(event) => setIdA(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIdA(event.target.value)}
               placeholder="Session ID A"
             />
             <Input
               value={idB}
-              onChange={(event) => setIdB(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIdB(event.target.value)}
               placeholder="Session ID B"
             />
             <Button

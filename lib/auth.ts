@@ -164,7 +164,7 @@ export async function setServerSession(session: Partial<SessionData>) {
     name: SESSION_COOKIE,
     value: encodeSession(merged),
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 14,

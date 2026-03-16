@@ -30,6 +30,13 @@ describe("/api/process contract snapshot", () => {
               emailDraft:
                 "Subject: Weekly Update\n\nSharing this week's progress update for support and QA.",
             },
+            intelligence: {
+              topics: ["update"],
+              entities: ["support", "QA"],
+              urgency: "low" as const,
+              sentiment: "neutral" as const,
+              openLoops: [],
+            },
             auditTrail: [
               {
                 step: "capture",
@@ -104,6 +111,7 @@ describe("/api/process contract snapshot", () => {
           "transcript",
           "summary",
           "actions",
+          "intelligence",
           "auditTrail",
           "meta",
         ],

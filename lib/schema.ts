@@ -50,12 +50,23 @@ export const ProcessMetaSchema = z
   })
   .strict();
 
+export const ProcessIntelligenceSchema = z
+  .object({
+    topics: z.array(z.string()),
+    entities: z.array(z.string()),
+    urgency: z.enum(["low", "medium", "high"]),
+    sentiment: z.enum(["positive", "negative", "neutral"]),
+    openLoops: z.array(z.string()),
+  })
+  .strict();
+
 export const ProcessResponseSchema = z
   .object({
     inputMode: InputModeSchema,
     transcript: z.string(),
     summary: z.string(),
     actions: ProcessActionsSchema,
+    intelligence: ProcessIntelligenceSchema,
     auditTrail: z.array(AuditTrailEntrySchema),
     meta: ProcessMetaSchema,
   })
@@ -69,6 +80,7 @@ export const ProcessResponseJsonSchema = {
     "transcript",
     "summary",
     "actions",
+    "intelligence",
     "auditTrail",
     "meta",
   ],
@@ -99,6 +111,19 @@ export const ProcessResponseJsonSchema = {
         },
       },
       required: ["taskList", "emailDraft"],
+    },
+    intelligence: {
+      type: "object",
+      additionalProperties: false,
+      propertyOrdering: ["topics", "entities", "urgency", "sentiment", "openLoops"],
+      properties: {
+        topics: { type: "array", items: { type: "string" } },
+        entities: { type: "array", items: { type: "string" } },
+        urgency: { type: "string", enum: ["low", "medium", "high"] },
+        sentiment: { type: "string", enum: ["positive", "negative", "neutral"] },
+        openLoops: { type: "array", items: { type: "string" } },
+      },
+      required: ["topics", "entities", "urgency", "sentiment", "openLoops"],
     },
     auditTrail: {
       type: "array",
@@ -168,6 +193,7 @@ export const ProcessResponseJsonSchema = {
     "transcript",
     "summary",
     "actions",
+    "intelligence",
     "auditTrail",
     "meta",
   ],

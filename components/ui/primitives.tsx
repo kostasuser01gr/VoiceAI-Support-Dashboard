@@ -1,263 +1,103 @@
 import type { ReactNode } from "react";
-
-type ClassValue = string | false | null | undefined;
-
-function cn(...values: ClassValue[]) {
-  return values.filter(Boolean).join(" ");
-}
+import { cn } from "@/lib/utils";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
+type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 const buttonVariantClass: Record<ButtonVariant, string> = {
-  primary:
-    "border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950",
-  secondary:
-    "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 active:bg-slate-100",
-  ghost:
-    "border border-transparent bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200",
-  danger:
-    "border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 active:bg-rose-200",
+  primary: "bg-white text-black hover:bg-zinc-200 active:bg-zinc-300 shadow-sm",
+  secondary: "border border-border bg-surface text-foreground hover:bg-surface-hover active:bg-zinc-800",
+  ghost: "text-muted-foreground hover:text-foreground hover:bg-surface",
+  danger: "border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20",
 };
 
 const buttonSizeClass: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-xs",
-  md: "h-10 px-4 text-sm",
-  lg: "h-11 px-5 text-sm",
+  sm: "h-8 px-3 text-[11px] font-semibold uppercase tracking-wider",
+  md: "h-10 px-5 text-xs font-semibold uppercase tracking-wider",
+  lg: "h-12 px-6 text-sm font-semibold uppercase tracking-wider",
 };
 
-export function Button({
-  className,
-  children,
-  variant = "secondary",
-  size = "md",
-  type = "button",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-}) {
+export function Button({ className, children, variant = "secondary", size = "md", type = "button", ...props }: React.ComponentPropsWithoutRef<"button"> & { variant?: ButtonVariant; size?: ButtonSize }) {
   return (
-    <button
-      type={type}
-      className={cn(
-        "inline-flex items-center justify-center rounded-xl font-semibold transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        buttonVariantClass[variant],
-        buttonSizeClass[size],
-        className,
-      )}
-      {...props}
-    >
+    <button type={type} className={cn("inline-flex items-center justify-center rounded-md transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-30", buttonVariantClass[variant], buttonSizeClass[size], className)} {...props}>
       {children}
     </button>
   );
 }
 
-export function Input({
-  className,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+export function Card({ className, children }: { className?: string; children?: ReactNode }) {
+  return <section className={cn("glass-panel rounded-lg p-6", className)}>{children}</section>;
+}
+
+export function Input({ className, ...props }: React.ComponentPropsWithoutRef<"input">) {
   return (
     <input
       className={cn(
-        "h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900",
-        "placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1",
-        className,
+        "h-10 w-full rounded-md border border-border bg-surface px-4 text-sm text-foreground placeholder:text-zinc-700 outline-none focus:border-border-strong transition-all",
+        className
       )}
       {...props}
     />
   );
 }
 
-export function Select({
-  className,
-  children,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({ className, children, ...props }: React.ComponentPropsWithoutRef<"select">) {
   return (
-    <select
+    <div className="relative">
+      <select
+        className={cn(
+          "h-10 w-full rounded-md border border-border bg-surface px-4 text-sm text-zinc-300 outline-none focus:border-border-strong transition-all appearance-none cursor-pointer",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+export function Textarea({ className, ...props }: React.ComponentPropsWithoutRef<"textarea">) {
+  return (
+    <textarea
       className={cn(
-        "h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1",
-        className,
+        "w-full rounded-md border border-border bg-surface p-4 text-sm text-foreground placeholder:text-zinc-700 outline-none focus:border-border-strong transition-all resize-none leading-relaxed",
+        className
       )}
       {...props}
-    >
-      {children}
-    </select>
+    />
   );
 }
-
-type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 const badgeClass: Record<BadgeTone, string> = {
-  neutral: "border-slate-200 bg-slate-100 text-slate-700",
-  success: "border-emerald-200 bg-emerald-100 text-emerald-800",
-  warning: "border-amber-200 bg-amber-100 text-amber-800",
-  danger: "border-rose-200 bg-rose-100 text-rose-800",
-  info: "border-cyan-200 bg-cyan-100 text-cyan-800",
+  neutral: "border-border bg-surface text-muted-foreground",
+  success: "border-emerald-500/10 bg-emerald-500/5 text-emerald-400",
+  warning: "border-amber-500/10 bg-amber-500/5 text-amber-400",
+  danger: "border-rose-500/10 bg-rose-500/5 text-rose-400",
+  info: "border-sky-500/10 bg-sky-500/5 text-sky-400",
 };
 
-export function Badge({
-  tone = "neutral",
-  className,
-  children,
-}: {
-  tone?: BadgeTone;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold",
-        badgeClass[tone],
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
+export function Badge({ tone = "neutral", className, children }: { tone?: BadgeTone; className?: string; children?: ReactNode }) {
+  return <span className={cn("inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em]", badgeClass[tone], className)}>{children}</span>;
 }
 
-export function Card({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
+export function Dialog({ open, title, description, onClose, children }: { open: boolean; title: string; description?: string; onClose: () => void; children?: ReactNode }) {
+  if (!open) return null;
   return (
-    <section
-      className={cn(
-        "rounded-2xl border border-white/70 bg-white/85 p-4 shadow-[0_8px_32px_rgba(15,23,42,0.08)] backdrop-blur",
-        className,
-      )}
-    >
-      {children}
-    </section>
-  );
-}
-
-export function Tabs({
-  value,
-  onChange,
-  tabs,
-  className,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  tabs: Array<{ value: string; label: string; count?: number }>;
-  className?: string;
-}) {
-  return (
-    <div className={cn("inline-flex flex-wrap gap-2", className)}>
-      {tabs.map((tab) => {
-        const active = tab.value === value;
-        return (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => onChange(tab.value)}
-            className={cn(
-              "inline-flex h-9 items-center gap-1 rounded-lg border px-3 text-xs font-semibold transition-colors",
-              active
-                ? "border-cyan-300 bg-cyan-50 text-cyan-900"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-1",
-            )}
-          >
-            <span>{tab.label}</span>
-            {typeof tab.count === "number" && <span>{tab.count}</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-export function Toast({
-  tone = "info",
-  children,
-  className,
-}: {
-  tone?: BadgeTone;
-  children: ReactNode;
-  className?: string;
-}) {
-  const toneClass =
-    tone === "danger"
-      ? "border-rose-300 bg-rose-50 text-rose-800"
-      : tone === "warning"
-        ? "border-amber-300 bg-amber-50 text-amber-800"
-        : tone === "success"
-          ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-          : tone === "info"
-            ? "border-cyan-300 bg-cyan-50 text-cyan-800"
-            : "border-slate-300 bg-slate-50 text-slate-700";
-
-  return (
-    <div className={cn("rounded-xl border px-3 py-2 text-sm", toneClass, className)}>
-      {children}
-    </div>
-  );
-}
-
-export function Tooltip({
-  label,
-  children,
-  className,
-}: {
-  label: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <span
-      title={label}
-      aria-label={label}
-      className={cn("inline-flex cursor-help items-center", className)}
-    >
-      {children}
-    </span>
-  );
-}
-
-export function Dialog({
-  open,
-  title,
-  description,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  title: string;
-  description?: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  if (!open) {
-    return null;
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl"
-      >
-        <div className="mb-3 flex items-center justify-between gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+      <div role="dialog" className="w-full max-w-xl bg-surface border border-border rounded-lg p-8 shadow-2xl">
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-            {description && <p className="text-sm text-slate-600">{description}</p>}
+            <h2 className="text-lg font-medium tracking-tight text-white">{title}</h2>
+            {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
           </div>
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            Close
-          </Button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-white transition-colors">✕</button>
         </div>
         {children}
       </div>
@@ -265,29 +105,94 @@ export function Dialog({
   );
 }
 
-export function Dropdown({
-  value,
-  onChange,
-  options,
-  className,
-}: {
+export function Dropdown({ value, onChange, options, className, ...props }: {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: Array<{ value: string; label: string }>;
+  className?: string;
+} & Omit<React.ComponentPropsWithoutRef<"select">, "value" | "onChange">) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={onChange}
+        className={cn(
+          "h-10 w-full rounded-md border border-border bg-surface px-4 text-sm text-zinc-300 outline-none focus:border-border-strong transition-all appearance-none cursor-pointer",
+          className,
+        )}
+        {...props}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+export function Tabs({ activeTab, onChange, tabs, className }: {
+  activeTab: string;
+  onChange: (value: string) => void;
+  tabs: Array<{ value: string; label: string; count?: number }>;
   className?: string;
 }) {
   return (
-    <Select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className={className}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          onClick={() => onChange(tab.value)}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-all",
+            activeTab === tab.value
+              ? "border-accent bg-accent/10 text-accent"
+              : "border-border bg-surface text-muted-foreground hover:border-border-strong hover:text-foreground",
+          )}
+        >
+          {tab.label}
+          {tab.count !== undefined && (
+            <span className="rounded-full bg-current/10 px-1.5 py-0.5 text-[10px] tabular-nums">
+              {tab.count}
+            </span>
+          )}
+        </button>
       ))}
-    </Select>
+    </div>
+  );
+}
+
+export function Tooltip({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("group relative inline-flex", className)}>
+      {children}
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 whitespace-nowrap shadow-lg">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+const toastToneClass: Record<string, string> = {
+  danger: "border-rose-500/20 bg-rose-500/10 text-rose-400",
+  success: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+  warning: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+  info: "border-sky-500/20 bg-sky-500/10 text-sky-400",
+  neutral: "border-border bg-surface text-muted-foreground",
+};
+
+export function Toast({ tone = "neutral", className, children }: { tone?: string; className?: string; children?: ReactNode }) {
+  return (
+    <div className={cn("rounded-md border px-4 py-3 text-sm", toastToneClass[tone] ?? toastToneClass.neutral, className)}>
+      {children}
+    </div>
   );
 }
 

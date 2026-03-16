@@ -82,6 +82,13 @@ function makeStubResponse(params: {
       taskList,
       emailDraft: `Subject: Follow-up\n\n${summary}\n\nPlease review before sending.`,
     },
+    intelligence: {
+      topics: [],
+      entities: [],
+      urgency: "low",
+      sentiment: "neutral",
+      openLoops: [],
+    },
     auditTrail: [
       {
         step: "capture",

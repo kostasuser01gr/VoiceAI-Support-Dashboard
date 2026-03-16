@@ -55,37 +55,38 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     return (
-      <div className="mx-auto mt-6 max-w-5xl rounded-3xl border border-rose-300 bg-rose-50 p-6 text-slate-900 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-700">
-          Runtime Fallback
+      <div className="mx-auto mt-12 max-w-2xl rounded-[2rem] border border-rose-500/20 bg-rose-500/5 p-12 text-zinc-300 shadow-2xl backdrop-blur-xl">
+        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-rose-400">
+          Runtime Exception
         </p>
-        <h1 className="mt-2 text-2xl font-semibold">The dashboard hit a runtime error.</h1>
-        <p className="mt-2 text-sm text-slate-700">
-          A safe fallback is active. Use diagnostics below and verify service health before retry.
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-white">The dashboard encountered a failure.</h1>
+        <p className="mt-3 text-sm text-zinc-500 leading-relaxed">
+          A safe circuit breaker has been triggered. Please review the diagnostics below and verify service health before attempting to reload.
         </p>
-        <p className="mt-4 rounded-lg bg-white/80 p-3 text-sm font-medium text-rose-700">
+        <div className="mt-6 rounded-xl bg-black/40 border border-white/5 p-4 font-mono text-xs text-rose-300/80 overflow-auto max-h-40 leading-relaxed">
           {this.state.message || "Unknown runtime error."}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+        </div>
+        <div className="mt-8 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={() => this.copyDiagnostics()}
-            className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
+            className="h-10 px-5 rounded-lg bg-white text-black text-sm font-bold tracking-tight hover:bg-white/90 transition-all"
           >
-            Copy diagnostics
+            Copy Diagnostics
           </button>
           <a
             href="/api/health"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+            target="_blank"
+            className="h-10 px-5 rounded-lg border border-white/10 bg-white/5 text-zinc-400 text-sm font-bold tracking-tight hover:bg-white/10 transition-all flex items-center"
           >
-            Open /api/health
+            View Status
           </a>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+            className="h-10 px-5 rounded-lg border border-white/10 bg-white/5 text-zinc-400 text-sm font-bold tracking-tight hover:bg-white/10 transition-all"
           >
-            Reload page
+            Reload Page
           </button>
         </div>
       </div>

@@ -289,12 +289,12 @@ export default function ActionsPage() {
           <div className="mt-4 grid gap-2 md:grid-cols-[1fr_180px]">
             <Input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
               placeholder="Search by summary or id"
             />
             <Dropdown
               value={statusFilter}
-              onChange={(value) => setStatusFilter(value as ReviewStatus | "all")}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as ReviewStatus | "all")}
               options={[
                 { value: "pending", label: "Pending" },
                 { value: "approved", label: "Approved" },
@@ -305,8 +305,8 @@ export default function ActionsPage() {
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <Tabs
-              value={statusFilter}
-              onChange={(value) =>
+              activeTab={statusFilter}
+              onChange={(value: string) =>
                 setStatusFilter(value as ReviewStatus | "all")
               }
               tabs={[

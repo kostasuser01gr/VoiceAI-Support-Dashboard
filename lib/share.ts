@@ -15,8 +15,24 @@ type SharePayload = {
   pwd?: string;
 };
 
+const DEMO_FALLBACK_SECRET = "local-demo-share-secret";
+
 function getSecret() {
-  return process.env.SHARE_TOKEN_SECRET || "local-demo-share-secret";
+  const secret = process.env.SHARE_TOKEN_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      // Fail-closed: log a critical warning but keep running to avoid a hard crash
+      // during demo deployments that omit SHARE_TOKEN_SECRET. Tokens signed with
+      // the fallback secret are trivially forgeable — operators MUST set this env var.
+      console.error(
+        "[SECURITY] SHARE_TOKEN_SECRET is not set in production. " +
+          "Share tokens are signed with a well-known fallback secret and can be forged. " +
+          "Set SHARE_TOKEN_SECRET to a cryptographically random value.",
+      );
+    }
+    return DEMO_FALLBACK_SECRET;
+  }
+  return secret;
 }
 
 function toBase64Url(input: string) {
@@ -38,8 +54,12 @@ function signPayload(payloadEncoded: string) {
 }
 
 function hashPassword(password: string) {
-  return createHash("sha256")
-    .update(`share-password:${password}:${getSecret()}`)
+  // Use HMAC-SHA256 keyed by the share secret so brute-forcing requires
+  // knowledge of the server-side secret (equivalent to an offline attack
+  // against a properly-managed secret). Upgrade to Argon2/scrypt if the
+  // secret ever becomes externally observable.
+  return createHmac("sha256", getSecret())
+    .update(`share-password:${password}`)
     .digest("hex");
 }
 

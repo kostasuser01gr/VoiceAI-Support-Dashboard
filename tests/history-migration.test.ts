@@ -220,6 +220,13 @@ describe("local history v4 migration", () => {
           taskList: ["Follow up"],
           emailDraft: "Subject: Hello\n\nHello\n\nPlease review before sending.",
         },
+        intelligence: {
+          topics: [],
+          entities: [],
+          urgency: "low",
+          sentiment: "neutral",
+          openLoops: [],
+        },
         auditTrail: [
           {
             step: "capture",

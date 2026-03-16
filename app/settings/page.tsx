@@ -135,7 +135,7 @@ export default function SettingsPage() {
               <span className="mb-1 block text-sm font-semibold">Default Preset</span>
               <Select
                 value={settings.defaultPreset}
-                onChange={(event) =>
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                   patchUserSettings({ defaultPreset: event.target.value as PresetId })
                 }
               >
@@ -151,7 +151,7 @@ export default function SettingsPage() {
               <span className="mb-1 block text-sm font-semibold">Language (placeholder)</span>
               <Input
                 value={settings.language}
-                onChange={(event) => patchUserSettings({ language: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => patchUserSettings({ language: event.target.value })}
               />
             </label>
 
@@ -159,7 +159,7 @@ export default function SettingsPage() {
               <span className="mb-1 block text-sm font-semibold">Tone</span>
               <Select
                 value={settings.tone}
-                onChange={(event) =>
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                   patchUserSettings({ tone: event.target.value as "neutral" | "pro" })
                 }
               >
@@ -172,7 +172,7 @@ export default function SettingsPage() {
               <span className="mb-1 block text-sm font-semibold">Workspace ID</span>
               <Input
                 value={settings.workspaceId}
-                onChange={(event) => patchUserSettings({ workspaceId: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => patchUserSettings({ workspaceId: event.target.value })}
               />
             </label>
 
@@ -180,7 +180,7 @@ export default function SettingsPage() {
               <span className="mb-1 block text-sm font-semibold">User ID</span>
               <Input
                 value={settings.userId}
-                onChange={(event) => patchUserSettings({ userId: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => patchUserSettings({ userId: event.target.value })}
               />
             </label>
 
@@ -191,7 +191,7 @@ export default function SettingsPage() {
                 min={1}
                 max={365}
                 value={settings.retentionDays}
-                onChange={(event) =>
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   patchUserSettings({ retentionDays: Number(event.target.value) || 30 })
                 }
               />

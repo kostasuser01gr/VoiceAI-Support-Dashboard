@@ -9,7 +9,6 @@ import {
   GeminiConfigError,
   GeminiResponseValidationError,
 } from "@/lib/gemini";
-import { deriveSessionIndex } from "@/lib/intelligence";
 import { retrieveContext } from "@/lib/rag";
 import {
   logServerEvent,
@@ -413,9 +412,11 @@ export async function processPayload(
     emailDraft: normalizedEmailDraft,
   });
 
-  const index = deriveSessionIndex(cleanTranscript, normalizedTaskList);
   const analysis: SessionAnalysis = {
-    index,
+    index: {
+      ...modelOutput.intelligence,
+      openLoopsCount: modelOutput.intelligence.openLoops.length,
+    },
     verifier: verifier.report,
   };
 
@@ -447,6 +448,7 @@ export async function processPayload(
       taskList: normalizedTaskList,
       emailDraft: normalizedEmailDraft,
     },
+    intelligence: modelOutput.intelligence,
     auditTrail,
     meta: createMeta({
       requestId,
@@ -460,7 +462,7 @@ export async function processPayload(
         profanity.replacedCount > 0 ||
         pii.redactions > 0 ||
         !verifier.report.ok,
-      approvalRequired: index.urgency === "high",
+      approvalRequired: modelOutput.intelligence.urgency === "high",
     }),
   };
 
@@ -714,9 +716,6 @@ export async function POST(request: Request) {
         "x-verifier-score": String(analysis.verifier.score),
         "x-verifier-ok": analysis.verifier.ok ? "true" : "false",
         "x-verifier-flags": analysis.verifier.flags.join(","),
-        "x-session-urgency": analysis.index.urgency,
-        "x-session-sentiment": analysis.index.sentiment,
-        "x-session-topics": analysis.index.topics.join(","),
       },
     });
     if (idempotencyScope) {
@@ -727,9 +726,6 @@ export async function POST(request: Request) {
           "x-verifier-score": String(analysis.verifier.score),
           "x-verifier-ok": analysis.verifier.ok ? "true" : "false",
           "x-verifier-flags": analysis.verifier.flags.join(","),
-          "x-session-urgency": analysis.index.urgency,
-          "x-session-sentiment": analysis.index.sentiment,
-          "x-session-topics": analysis.index.topics.join(","),
         },
         storedAt: new Date().toISOString(),
       });

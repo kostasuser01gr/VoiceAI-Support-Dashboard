@@ -54,10 +54,8 @@ type CacheEntry = {
 const CACHE_TTL_SECONDS = 60 * 60;
 const MAX_RETRIES = 2;
 
-const breakerState = {
-  failureCount: 0,
-  openUntilMs: 0,
-};
+const BREAKER_FAILURES_KEY = "gemini:breaker:failures";
+const BREAKER_OPEN_KEY = "gemini:breaker:open";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -75,22 +73,31 @@ function getModelCandidates(params: GenerateStructuredResponseParams) {
     .filter((entry, index, list) => list.indexOf(entry) === index);
 }
 
-function shouldShortCircuit() {
-  return breakerState.openUntilMs > Date.now();
+async function shouldShortCircuit() {
+  const open = await getRuntimeStateAdapter().get(BREAKER_OPEN_KEY);
+  return open === "true";
 }
 
-function recordProviderFailure() {
+async function recordProviderFailure() {
   const config = getAppConfig();
-  breakerState.failureCount += 1;
-  if (breakerState.failureCount >= config.geminiCircuitBreakerFailureThreshold) {
-    breakerState.failureCount = 0;
-    breakerState.openUntilMs = Date.now() + config.geminiCircuitBreakerCooldownMs;
+  const adapter = getRuntimeStateAdapter();
+  
+  const failures = await adapter.incrBy(BREAKER_FAILURES_KEY, 1);
+  if (failures >= config.geminiCircuitBreakerFailureThreshold) {
+    await adapter.set(BREAKER_OPEN_KEY, "true", config.geminiCircuitBreakerCooldownMs / 1000);
+    await adapter.del(BREAKER_FAILURES_KEY);
+    
+    logServerEvent("error", "gemini.circuit_breaker_opened", {
+      threshold: config.geminiCircuitBreakerFailureThreshold,
+      cooldownMs: config.geminiCircuitBreakerCooldownMs,
+    });
   }
 }
 
-function recordProviderSuccess() {
-  breakerState.failureCount = 0;
-  breakerState.openUntilMs = 0;
+async function recordProviderSuccess() {
+  const adapter = getRuntimeStateAdapter();
+  await adapter.del(BREAKER_FAILURES_KEY);
+  await adapter.del(BREAKER_OPEN_KEY);
 }
 
 async function getCachedResponse(params: GenerateStructuredResponseParams) {
@@ -229,7 +236,7 @@ export async function generateStructuredResponse(
     );
   }
 
-  if (shouldShortCircuit()) {
+  if (await shouldShortCircuit()) {
     throw new GeminiProviderUnavailableError(
       "Model provider is temporarily unavailable due to repeated failures.",
     );
@@ -256,7 +263,7 @@ export async function generateStructuredResponse(
           timestamp: Date.now(),
         };
         await setCachedResponse(params, entry);
-        recordProviderSuccess();
+        await recordProviderSuccess();
         return {
           output,
           model,
@@ -270,7 +277,7 @@ export async function generateStructuredResponse(
         }
 
         providerErrors.push(error instanceof Error ? error.message : String(error));
-        recordProviderFailure();
+        await recordProviderFailure();
 
         if (attempt >= MAX_RETRIES) {
           break;
@@ -293,7 +300,8 @@ export async function generateStructuredResponse(
   );
 }
 
-export function resetGeminiCircuitBreakerForTests() {
-  breakerState.failureCount = 0;
-  breakerState.openUntilMs = 0;
+export async function resetGeminiCircuitBreakerForTests() {
+  const adapter = getRuntimeStateAdapter();
+  await adapter.del(BREAKER_FAILURES_KEY);
+  await adapter.del(BREAKER_OPEN_KEY);
 }

@@ -54,6 +54,13 @@ describe("share tokens", () => {
           emailDraft:
             "Subject: Update\n\nSharing a short update.\n\nPlease review before sending.",
         },
+        intelligence: {
+          topics: ["update"],
+          entities: [],
+          urgency: "low" as const,
+          sentiment: "neutral" as const,
+          openLoops: [],
+        },
         auditTrail: [
           { step: "capture", timestamp: "2026-03-02T10:00:00.000Z", details: "Captured" },
           { step: "transcribe", timestamp: "2026-03-02T10:00:00.000Z", details: "Transcribed" },
@@ -117,6 +124,13 @@ describe("share tokens", () => {
           transcript: "hello",
           summary: "hello",
           actions: { taskList: [], emailDraft: "hello" },
+          intelligence: {
+            topics: [],
+            entities: [],
+            urgency: "low" as const,
+            sentiment: "neutral" as const,
+            openLoops: [],
+          },
           auditTrail: [],
           meta: {
             requestId: "req-2",
@@ -173,6 +187,13 @@ describe("share tokens", () => {
         transcript: "hello",
         summary: "hello",
         actions: { taskList: [], emailDraft: "hello" },
+        intelligence: {
+          topics: [],
+          entities: [],
+          urgency: "low" as const,
+          sentiment: "neutral" as const,
+          openLoops: [],
+        },
         auditTrail: [],
         meta: {
           requestId: "req-3",
