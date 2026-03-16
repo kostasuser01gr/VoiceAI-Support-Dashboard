@@ -296,10 +296,10 @@ export default function ActionsPage() {
                 setStatusFilter(value as ReviewStatus | "all")
               }
               tabs={[
-                { id: "pending", label: "Pending" },
-                { id: "approved", label: "Approved" },
-                { id: "executed", label: "Executed" },
-                { id: "all", label: "All" },
+                { value: "pending", label: "Pending" },
+                { value: "approved", label: "Approved" },
+                { value: "executed", label: "Executed" },
+                { value: "all", label: "All" },
               ]}
             />
             <div className="flex flex-wrap items-center gap-2">

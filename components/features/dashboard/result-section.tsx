@@ -3,7 +3,7 @@
 import { ActionCards } from "@/components/features/actions/action-cards";
 import { Badge, Card } from "@/components/ui/primitives";
 import { ProcessResponse } from "@/lib/schema";
-import type { SessionAnalysis, SessionReviewState } from "@/lib/session-meta";
+import type { SessionAnalysis, SessionReview } from "@/lib/session-meta";
 
 type ResultSectionProps = {
   result: ProcessResponse | null;
@@ -11,7 +11,7 @@ type ResultSectionProps = {
   editableEmailDraft: string;
   onEditEmail: (text: string) => void;
   analysis: SessionAnalysis;
-  review: SessionReviewState;
+  review: SessionReview;
   onPersistReview: () => void;
   newComment: string;
   setNewComment: (text: string) => void;

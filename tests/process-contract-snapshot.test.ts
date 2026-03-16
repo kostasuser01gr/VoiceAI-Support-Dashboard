@@ -44,13 +44,7 @@ describe("/api/process contract snapshot", () => {
                 details: "Captured.",
               },
             ],
-            intelligence: {
-              topics: [],
-              entities: [],
-              urgency: "low",
-              sentiment: "neutral",
-              openLoops: [],
-              },            meta: {
+            meta: {
               requestId,
               model: "gemini-2.0-flash",
               latencyMs: 3,

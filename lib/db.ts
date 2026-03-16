@@ -71,7 +71,7 @@ function normalizeReview(review: unknown): SessionReview {
         ? (candidate.taskOwners as Record<string, string>)
         : {},
     comments: Array.isArray(candidate.comments)
-      ? candidate.comments.filter((entry: any) => typeof entry === "string")
+      ? candidate.comments.filter((entry: unknown) => typeof entry === "string")
       : [],
   };
 }

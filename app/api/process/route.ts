@@ -631,18 +631,7 @@ export async function POST(request: Request) {
         }).catch(err => logServerEvent("warn", "process.db_persist_failed", { requestId, error: err.message }));
       }
 
-    const successResponse = NextResponse.json(result, {
-      headers: {
-        "x-correlation-id": correlationId,
-        "x-verifier-score": String(analysis.verifier.score),
-        "x-verifier-ok": analysis.verifier.ok ? "true" : "false",
-        "x-verifier-flags": analysis.verifier.flags.join(","),
-      },
-    });
-    if (idempotencyScope) {
-      await storeIdempotentResponse(idempotencyScope, {
-        status: successResponse.status,
-        body: result,
+      const successResponse = NextResponse.json(result, {
         headers: {
           "x-correlation-id": correlationId,
           "x-verifier-score": String(analysis.verifier.score),
@@ -650,12 +639,12 @@ export async function POST(request: Request) {
           "x-verifier-flags": analysis.verifier.flags.join(","),
         },
       });
-
       if (idempotencyScope) {
         await storeIdempotentResponse(idempotencyScope, {
           status: successResponse.status,
           body: result,
           headers: {
+            "x-correlation-id": correlationId,
             "x-verifier-score": String(analysis.verifier.score),
             "x-verifier-ok": analysis.verifier.ok ? "true" : "false",
             "x-verifier-flags": analysis.verifier.flags.join(","),
@@ -663,9 +652,7 @@ export async function POST(request: Request) {
           storedAt: new Date().toISOString(),
         });
       }
-
       return successResponse;
-
     } catch (error) {
       if (error instanceof JsonBodyTooLargeError) {
         trackSecuritySignal(clientIdentity, "payload_too_large");
