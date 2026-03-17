@@ -59,8 +59,8 @@ export function VoiceOrb({ isListening, audioIntensity = 0 }: { isListening: boo
       canvas.getContext("webgl") ??
       canvas.getContext("experimental-webgl");
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCanRenderCanvas(Boolean(webglContext));
+    const t = setTimeout(() => setCanRenderCanvas(Boolean(webglContext)), 0);
+    return () => clearTimeout(t);
   }, []);
 
   return (

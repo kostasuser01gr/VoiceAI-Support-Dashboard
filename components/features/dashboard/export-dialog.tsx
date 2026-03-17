@@ -1,3 +1,5 @@
+"use client";
+
 import { useAppStore } from '@/lib/store';
 import { Dialog, Button } from '@/components/ui/primitives';
 

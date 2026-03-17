@@ -1,3 +1,5 @@
+"use client";
+
 import { useAppStore } from '@/lib/store';
 import { Card, Badge } from '@/components/ui/primitives';
 import { ActionCards } from '@/components/features/actions/action-cards';

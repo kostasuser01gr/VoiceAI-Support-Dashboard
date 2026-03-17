@@ -1,3 +1,5 @@
+"use client";
+
 import { VoiceOrb } from '@/components/features/voice/voice-orb';
 import { Button } from '@/components/ui/primitives';
 import { useAppStore } from '@/lib/store';

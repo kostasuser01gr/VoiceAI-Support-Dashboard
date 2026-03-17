@@ -1,3 +1,5 @@
+"use client";
+
 import { useAppStore } from '@/lib/store';
 import { Card, Button } from '@/components/ui/primitives';
 import { PRESETS } from '@/lib/presets';

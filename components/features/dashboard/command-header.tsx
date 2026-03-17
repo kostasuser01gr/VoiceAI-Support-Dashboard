@@ -1,3 +1,5 @@
+"use client";
+
 import { AppNav } from '@/components/app-nav';
 import { Button } from '@/components/ui/primitives';
 import { useAppStore } from '@/lib/store';
