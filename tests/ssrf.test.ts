@@ -249,4 +249,205 @@ describe("ssrf validator", () => {
     expect(result.ok).toBe(false);
     expect((result as { ok: false; reason: string }).reason).toMatch(/resolution failed/i);
   });
+
+  // ── Multi-host allowlist — kills L31 some→every mutant ──────────────────────
+  it("allows first of two allowlisted hosts even when second does not match", async () => {
+    vi.stubEnv("WEBHOOK_ALLOWLIST_HOSTS", "trusted.example,other.com");
+    mockedLookup.mockResolvedValue(lookupResult("93.184.216.34"));
+    // sub.trusted.example → matches "trusted.example" but NOT "other.com"
+    // some(): allowed; every(): would require BOTH → blocked
+    const result = await validateOutboundUrl("https://sub.trusted.example/hook");
+    expect(result).toMatchObject({ ok: true });
+  });
+
+  it("allowlist with empty entries (double comma) is handled safely", async () => {
+    vi.stubEnv("WEBHOOK_ALLOWLIST_HOSTS", "trusted.example,,other.com");
+    mockedLookup.mockResolvedValue(lookupResult("93.184.216.34"));
+    expect(await validateOutboundUrl("https://trusted.example/hook")).toMatchObject({ ok: true });
+    expect(await validateOutboundUrl("https://notlisted.example/hook")).toMatchObject({
+      ok: false,
+    });
+  });
+
+  // ── 169.x.x.x boundary — kills L47 &&→|| mutant ────────────────────────────
+  it("allows 169.1.x.x — not in link-local range (public boundary)", async () => {
+    mockedLookup.mockResolvedValue(lookupResult("169.1.0.1"));
+    expect(await validateOutboundUrl("https://169.1.0.1/hook")).toMatchObject({ ok: true });
+  });
+
+  it("allows 169.253.x.x — just below link-local range", async () => {
+    mockedLookup.mockResolvedValue(lookupResult("169.253.0.1"));
+    expect(await validateOutboundUrl("https://169.253.0.1/hook")).toMatchObject({ ok: true });
+  });
+
+  // ── 192.x.x.x boundary — kills L53 &&→|| mutant ────────────────────────────
+  it("allows 192.1.x.x — not in 192.168 range", async () => {
+    mockedLookup.mockResolvedValue(lookupResult("192.1.0.1"));
+    expect(await validateOutboundUrl("https://192.1.0.1/hook")).toMatchObject({ ok: true });
+  });
+
+  it("blocks 192.0.0.x — IETF protocol assignments range", async () => {
+    mockedLookup.mockResolvedValue(lookupResult("93.184.216.34"));
+    expect(await validateOutboundUrl("https://192.0.0.1/hook")).toMatchObject({ ok: false });
+  });
+
+  // ── hasUnsafeHostname — kills L108 &&-chain mutations ───────────────────────
+  // Mock DNS to return a public IP so only hasUnsafeHostname blocks these
+  it("blocks localhost even when DNS would resolve to public IP", async () => {
+    mockedLookup.mockResolvedValue(lookupResult("93.184.216.34"));
+    expect(await validateOutboundUrl("https://localhost/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks *.localdomain hostnames", async () => {
+    expect(await validateOutboundUrl("https://host.localdomain/hook")).toMatchObject({
+      ok: false,
+    });
+  });
+
+  // ── URL with only username (no password) — kills L128 &&→|| mutant ──────────
+  it("blocks URL with username but no password", async () => {
+    const result = await validateOutboundUrl("https://user@example.com/hook");
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toMatch(/credentials/i);
+  });
+
+  // ── IPv6 via DNS resolution — kills L68-L92 isPrivateIpv6 mutants ───────────
+  // These mutants are only reachable when DNS returns an IPv6 address
+  // (direct IPv6 URLs have brackets; isIP("[::1]")=0 skips direct check)
+  function lookupResult6(address: string) {
+    return [{ address, family: 6 }] as unknown as Awaited<ReturnType<typeof lookup>>;
+  }
+
+  it("blocks domain resolving to IPv6 loopback ::1 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("::1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks domain resolving to IPv6 unspecified :: via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("::"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks domain resolving to IPv6 fc::/7 (fc00) via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("fc00::1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks domain resolving to IPv6 fc::/7 (fd12) via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("fd12:3456::1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks domain resolving to IPv6 link-local fe80 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("fe80::1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks domain resolving to IPv6 link-local fe90 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("fe90::1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks domain resolving to IPv6 link-local fea0 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("fea0::1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks domain resolving to IPv6 link-local feb0 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("feb0::1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("allows domain resolving to public IPv6 2001:db8::1 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("2001:db8::1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: true });
+  });
+
+  it("blocks domain resolving to IPv4-mapped private IPv6 ::ffff:10.0.0.1 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("::ffff:10.0.0.1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("blocks domain resolving to IPv4-mapped private IPv6 ::ffff:192.168.1.1 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("::ffff:192.168.1.1"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: false });
+  });
+
+  it("allows domain resolving to IPv4-mapped public IPv6 ::ffff:93.184.216.34 via DNS", async () => {
+    mockedLookup.mockResolvedValue(lookupResult6("::ffff:93.184.216.34"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: true });
+  });
+});
+
+// ── StringLiteral / BooleanLiteral / ObjectLiteral reason-string tests ─────────
+// Kills L121/L124/L134/L138/L143/L147/L158 StringLiteral and ObjectLiteral mutants
+describe("validateOutboundUrl — reason strings and ObjectLiteral shapes", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    mockedLookup.mockReset();
+  });
+
+  it("invalid URL returns ok:false with truthy reason (kills L121 StringLiteral/ObjectLiteral)", async () => {
+    const result = await validateOutboundUrl("not-a-url");
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toBeTruthy();
+  });
+
+  it("HTTP URL returns ok:false with HTTPS-related reason (kills L124/L125 StringLiteral)", async () => {
+    const result = await validateOutboundUrl("http://example.com/hook");
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toMatch(/https/i);
+  });
+
+  it("URL with credentials returns ok:false with credentials reason (kills L128/L129)", async () => {
+    const result = await validateOutboundUrl("https://user:pass@example.com/hook");
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toMatch(/credentials/i);
+  });
+
+  it("unsafe hostname returns ok:false with private reason (kills L138 StringLiteral)", async () => {
+    const result = await validateOutboundUrl("https://localhost/hook");
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toMatch(/private/i);
+  });
+
+  it("host not in allowlist returns ok:false with allowlist reason (kills L143 StringLiteral)", async () => {
+    vi.stubEnv("WEBHOOK_ALLOWLIST_HOSTS", "trusted.com");
+    const result = await validateOutboundUrl("https://other.com/hook");
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toMatch(/allowlist/i);
+  });
+
+  it("direct private IP returns ok:false with reserved reason (kills L147 StringLiteral)", async () => {
+    const result = await validateOutboundUrl("https://10.0.0.1/hook");
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toMatch(/private|reserved/i);
+  });
+
+  it("DNS resolves to private IP returns ok:false with private reason (kills L158 StringLiteral)", async () => {
+    mockedLookup.mockResolvedValue(lookupResult("10.0.0.1"));
+    const result = await validateOutboundUrl("https://example.com/hook");
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toMatch(/private|reserved/i);
+  });
+
+  it("whitespace-only WEBHOOK_ALLOWLIST_HOSTS treats as unset — all hosts allowed (kills L10 MethodExpression)", async () => {
+    vi.stubEnv("WEBHOOK_ALLOWLIST_HOSTS", "   ");
+    mockedLookup.mockResolvedValue(lookupResult("93.184.216.34"));
+    expect(await validateOutboundUrl("https://example.com/hook")).toMatchObject({ ok: true });
+  });
+
+  it("100.64.0.1 (CGNAT lower boundary) is blocked (kills L44 EqualityOperator b>=64)", async () => {
+    expect(await validateOutboundUrl("https://100.64.0.1/hook")).toMatchObject({ ok: false });
+  });
+
+  it("100.127.255.255 (CGNAT upper boundary) is blocked (kills L44 EqualityOperator b<=127)", async () => {
+    expect(await validateOutboundUrl("https://100.127.255.255/hook")).toMatchObject({ ok: false });
+  });
+
+  it("100.63.255.255 is not blocked by CGNAT rule (confirms >= boundary)", async () => {
+    mockedLookup.mockResolvedValue(lookupResult("93.184.216.34"));
+    // 100.63 is below CGNAT 100.64-100.127 range → passes isPrivateIpv4 → DNS mock public → ok
+    expect(await validateOutboundUrl("https://100.63.255.255/hook")).toMatchObject({ ok: true });
+  });
 });
