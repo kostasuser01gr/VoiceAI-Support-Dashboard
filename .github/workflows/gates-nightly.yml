@@ -48,23 +48,20 @@ jobs:
       # G6: Coverage
       - name: G6 — Coverage
         run: npm test -- --coverage --reporter=json --outputFile=reports/coverage-summary.json
-        continue-on-error: true
 
       # G7: Mutation Testing (nightly only — slow)
       - name: G7 — Mutation (Stryker)
         run: npx stryker run
-        continue-on-error: true
 
       # G8: Audit
       - name: G8 — Audit
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
 
       # G9: SAST
       - name: G9 — SAST (semgrep)
-        uses: returntocorp/semgrep-action@v1
+        uses: returntocorp/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
         with:
           config: p/security-audit
-        continue-on-error: true
 
       # G10: Secrets
       - name: G10 — Secrets scan
@@ -81,12 +78,12 @@ jobs:
 
       # G12: Container Scan
       - name: G12 — Container scan (trivy)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
         with:
           scan-type: "fs"
           scan-ref: "."
           scanners: "vuln,config,secret"
-          exit-code: "0"
+          exit-code: "1"
           severity: "CRITICAL,HIGH"
 
       # Record metrics
@@ -108,7 +105,7 @@ jobs:
           "
 
       - name: Commit metrics update
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5.2.0
         with:
           commit_message: "chore(nightly): update MetricsLedger [skip ci]"
           file_pattern: ".black-vault/MetricsLedger.json reports/"

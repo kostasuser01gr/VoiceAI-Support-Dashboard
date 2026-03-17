@@ -48,8 +48,8 @@ gate G3 "TypeCheck" npx tsc --noEmit
 # G4: Tests
 gate G4 "Tests" npm test
 
-# G5: Integration (N/A)
-gate_skip G5 "Integration" "no integration test harness"
+# G5: Browser E2E
+gate G5 "Browser E2E" npm run test:e2e
 
 # G6: Coverage
 gate G6 "Coverage" npm test -- --coverage
@@ -58,17 +58,11 @@ gate G6 "Coverage" npm test -- --coverage
 if [[ "$SKIP_SLOW" == "--skip-slow" ]]; then
   gate_skip G7 "Mutation" "--skip-slow flag"
 else
-  gate G7 "Mutation (Stryker)" npx stryker run || true
-  FAIL=$((FAIL - 1)); PASS=$((PASS + 1))  # partial pass acceptable
-  echo "⚠  G7 PARTIAL (overall <95%; rbac.ts must be ≥95%)"
+  gate G7 "Mutation (Stryker)" npx stryker run
 fi
 
 # G8: Audit
-echo ""
-echo "━━━ G8: Audit ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-npm audit --audit-level=high || true
-echo "⚠  G8 MITIGATED (flatted advisory; overrides pin installed)"
-PASS=$((PASS + 1))
+gate G8 "Audit" npm audit --audit-level=high
 
 # G9: SAST
 if command -v semgrep &>/dev/null; then
@@ -94,11 +88,24 @@ gate G10 "Secrets scan" bash -c '
 echo ""
 echo "━━━ G11: CI Audit ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Checking GitHub Actions SHA pins..."
-if grep -rE "uses: [^@]+@[a-f0-9]{40}" .github/workflows/ >/dev/null 2>&1; then
+UNPINNED_ACTIONS="$(
+  rg -n "uses:\\s*" .github/workflows -g "*.yml" | awk '
+    {
+      ref=$0;
+      sub(/^.*uses:[[:space:]]*/, "", ref);
+      sub(/[[:space:]]+#.*$/, "", ref);
+      if (ref !~ /@[0-9a-f]{40}$/) {
+        print $0;
+      }
+    }
+  '
+)"
+if [[ -z "$UNPINNED_ACTIONS" ]]; then
   echo "✅ G11 PASS (all actions pinned to SHA)"
   PASS=$((PASS + 1))
 else
   echo "❌ G11 FAIL (unpinned actions found)"
+  echo "$UNPINNED_ACTIONS"
   FAIL=$((FAIL + 1))
 fi
 

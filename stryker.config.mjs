@@ -19,6 +19,11 @@ const config = {
   jsonReporter: {
     fileName: "reports/mutation/mutation.json",
   },
+  thresholds: {
+    high: 80,
+    low: 60,
+    break: 55,
+  },
   coverageAnalysis: "perTest",
   timeoutMS: 30000,
   concurrency: 4,

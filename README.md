@@ -45,11 +45,16 @@ Use Node 20.x with npm 10.x to match CI and production builds.
 npm run lint
 npm run typecheck
 npm run test
+npm test -- --coverage
+npm run test:e2e
+npx stryker run
 npm run eval
 npm run build
 npm run scan
 npm run judge:verify
 ```
+
+`npm run test:e2e` starts a local app server with demo-safe mode enabled and exercises the primary browser flow with Playwright.
 
 ## Governance and operations
 

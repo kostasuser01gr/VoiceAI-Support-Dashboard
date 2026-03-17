@@ -42,7 +42,7 @@ jobs:
         run: npm test -- --coverage
 
       - name: G9 SAST
-        uses: returntocorp/semgrep-action@v1
+        uses: returntocorp/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
         with:
           config: p/security-audit
 
@@ -78,7 +78,7 @@ jobs:
         run: npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file sbom-${{ github.ref_name }}.json || true
 
       - name: Create GitHub Release
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');

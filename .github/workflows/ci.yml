@@ -34,3 +34,17 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser E2E
+        env:
+          DEMO_SAFE_MODE: "true"
+          HISTORY_MODE: "local"
+          NEXT_TELEMETRY_DISABLED: "1"
+          PLAYWRIGHT_SERVER_COMMAND: npm run start -- --hostname 127.0.0.1 --port 3005
+        run: npm run test:e2e
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high

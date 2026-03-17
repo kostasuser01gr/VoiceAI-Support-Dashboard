@@ -48,12 +48,11 @@ jobs:
 
       # G8: Dependency Audit
       - name: G8 — Audit
-        run: npm audit --audit-level=high || true
-        # flatted high advisory is mitigated via overrides; informational only
+        run: npm audit --audit-level=high
 
       # G9: SAST
       - name: G9 — SAST (semgrep)
-        uses: returntocorp/semgrep-action@v1
+        uses: returntocorp/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
         with:
           config: p/security-audit
         continue-on-error: false
