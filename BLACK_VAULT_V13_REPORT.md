@@ -226,7 +226,7 @@ Install: `pip install pre-commit && pre-commit install`
 
 | Service | URL | Status |
 |---------|-----|--------|
-| Cloud Run (europe-west1) | https://voice-to-action-agent-690989569474.europe-west1.run.app | ✅ Live (revision 00009-n7n) |
+| Cloud Run (europe-west1) | https://voice-to-action-agent-zbluqfbniq-ew.a.run.app | ✅ Live (revision 00009-n7n) |
 | Firebase Hosting | https://chatgpt-ops.web.app | ✅ Live |
 | GitHub Repository | https://github.com/kostasuser01gr/Hackathon-Voice-AI-Support-Dashboard-UI | ✅ Push f6854af (V12) |
 | GitHub Issues | https://github.com/kostasuser01gr/Hackathon-Voice-AI-Support-Dashboard-UI/issues | ✅ 22 scan task issues live |
