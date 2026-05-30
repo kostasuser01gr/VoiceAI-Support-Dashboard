@@ -210,18 +210,17 @@ export default function ActionsPage() {
     return matchStatus && matchSearch;
   });
 
-  useEffect(() => {
-    setSelectedIds((current) =>
-      current.filter((id) => filteredRows.some((row) => row.id === id)),
-    );
-  }, [filteredRows]);
+  const visibleSelectedIds = useMemo(() => {
+    const visibleIds = new Set(filteredRows.map((row) => row.id));
+    return selectedIds.filter((id) => visibleIds.has(id));
+  }, [filteredRows, selectedIds]);
 
 
   const allVisibleSelected =
     filteredRows.length > 0 &&
-    filteredRows.every((row) => selectedIds.includes(row.id));
+    filteredRows.every((row) => visibleSelectedIds.includes(row.id));
 
-  const selectedRows = filteredRows.filter((row) => selectedIds.includes(row.id));
+  const selectedRows = filteredRows.filter((row) => visibleSelectedIds.includes(row.id));
 
   const toggleSelection = (id: string, next: boolean) => {
     setSelectedIds((current) => {
@@ -373,7 +372,7 @@ export default function ActionsPage() {
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
-                          checked={selectedIds.includes(row.id)}
+                          checked={visibleSelectedIds.includes(row.id)}
                           onChange={(event) => toggleSelection(row.id, event.target.checked)}
                           aria-label={`Select ${row.id}`}
                         />

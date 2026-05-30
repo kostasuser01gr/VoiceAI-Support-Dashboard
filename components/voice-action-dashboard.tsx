@@ -197,7 +197,10 @@ export function VoiceActionDashboard({
   useEffect(() => {
     if (voiceError && voiceError !== "unsupported") {
       storeSetErrorMessage(`Voice capture error: ${voiceError}`);
-      setToast({ type: "error", message: `Mic Error: ${voiceError}` });
+      const timer = window.setTimeout(() => {
+        setToast({ type: "error", message: `Mic Error: ${voiceError}` });
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [voiceError, storeSetErrorMessage]);
 
