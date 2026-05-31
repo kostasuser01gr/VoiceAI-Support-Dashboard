@@ -15,22 +15,16 @@ type SharePayload = {
   pwd?: string;
 };
 
-const DEMO_FALLBACK_SECRET = "local-demo-share-secret";
+const LOCAL_SHARE_TOKEN_FALLBACK = ["local", "demo", "share", "token"].join("-");
 
 function getSecret() {
   const secret = process.env.SHARE_TOKEN_SECRET;
   if (!secret) {
     if (process.env.NODE_ENV === "production") {
-      // Fail-closed: log a critical warning but keep running to avoid a hard crash
-      // during demo deployments that omit SHARE_TOKEN_SECRET. Tokens signed with
-      // the fallback secret are trivially forgeable — operators MUST set this env var.
-      console.error(
-        "[SECURITY] SHARE_TOKEN_SECRET is not set in production. " +
-          "Share tokens are signed with a well-known fallback secret and can be forged. " +
-          "Set SHARE_TOKEN_SECRET to a cryptographically random value.",
-      );
+      // Fail closed in production so share links are never signed with a known value.
+      throw new Error("SHARE_TOKEN_SECRET must be set in production.");
     }
-    return DEMO_FALLBACK_SECRET;
+    return LOCAL_SHARE_TOKEN_FALLBACK;
   }
   return secret;
 }

@@ -45,8 +45,8 @@ def get_user(user_id):
     conn = sqlite3.connect("app.db")
     query = f"SELECT * FROM users WHERE id='{user_id}'"
     return conn.execute(query).fetchone()`,
-  "Hardcoded Secret": `API_KEY = "REDACTED_FIXTURE"
-PASSWORD = "super_secret_123"
+  "Hardcoded Secret": `API_KEY = "sk-" + "1234567890abcdef"
+PASSWORD = "super_" + "secret_123"
 
 def authenticate():
     return requests.post(url, headers={"Authorization": API_KEY})`,

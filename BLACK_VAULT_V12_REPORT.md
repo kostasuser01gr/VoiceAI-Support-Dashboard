@@ -66,7 +66,7 @@
 
 | ID | Severity | Category | Location | Status |
 |----|----------|----------|----------|--------|
-| F001 | P0 | Hardcoded fallback secret in production | lib/share.ts:19 | VERIFIED |
+| F001 | P0 | Hardcoded fallback secret in production | lib/share.ts | RESOLVED |
 | F002 | P1 | SHA256 password hash (no server key) | lib/share.ts:67 | VERIFIED |
 | F003 | P1 | sameSite: "lax" on session cookie | lib/auth.ts:155 | VERIFIED |
 | F004 | P2 | CSP unsafe-eval allowed | lib/http-security.ts | VERIFIED |
@@ -152,7 +152,7 @@
 ## 7. SECURITY HARDENING SUMMARY
 
 ### P0 Fixes (Production-Critical)
-1. **SHARE_TOKEN_SECRET guard** (`lib/share.ts`): Production guard with `console.error` alert; fail-open with demo key only in non-production. Operators MUST set `SHARE_TOKEN_SECRET`.
+1. **SHARE_TOKEN_SECRET guard** (`lib/share.ts`): Production now fails closed when `SHARE_TOKEN_SECRET` is missing. Local/test runs retain a non-production fallback only.
 2. **HMAC password hash** (`lib/share.ts`): Switched from plain SHA256 to HMAC-SHA256 keyed by server secret.
 
 ### P1 Fixes
@@ -174,7 +174,7 @@
 | R001 | flatted <3.4.0 (GHSA-25h7-pfq9-p65f) in node_modules | LOW (exploitable only in parse() of untrusted data) | MEDIUM | flatted@3.4.1 installed; overrides pin in package.json; npm audit fix blocked by unrelated EBADPLATFORM conflict | MITIGATED |
 | R002 | G7 mutation score below 95% for auth/ssrf/verifier | MEDIUM | HIGH (test quality gap) | 484 equivalent mutants documented; boundary-value tests added; full mutation hardening deferred to next sprint | OPEN — see below |
 | R003 | HEALTHCHECK missing from Dockerfile (trivy LOW) | LOW | LOW | Container orchestration health checks configured at Cloud Run level | ACCEPTED (informational only) |
-| R004 | SHARE_TOKEN_SECRET not set in deployed Cloud Run service | HIGH (demo deployment) | HIGH (tokens forgeable) | Logged via production guard; operators must set env var before production use | OPEN — operator action required |
+| R004 | SHARE_TOKEN_SECRET not set in deployed Cloud Run service | HIGH (demo deployment) | HIGH (share links unavailable) | Production requests fail closed until the env var exists | RESOLVED IN CODE — operator must still configure hosted env before deployment |
 | R005 | SESSION_SIGNING_SECRET not set in deployed Cloud Run service | HIGH (demo deployment) | HIGH (sessions unsigned) | DEFAULT_SESSION returned for missing/invalid cookies; acceptable for demo | OPEN — operator action required |
 
 **R002 Remediation Plan**: Add full boundary-value mutation kill suite for ssrf.ts (IPv6 bracket stripping, allowlist normalisation), verifier.ts (NLP score thresholds), idempotency.ts (cache window boundaries), rateLimit.ts (token bucket boundaries). ETA: next sprint.
