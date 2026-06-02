@@ -68,7 +68,7 @@ class TestHardcodedSecrets:
     """Test hardcoded secret detection."""
 
     def test_hardcoded_api_key(self, analyzer: CodeAnalyzer) -> None:
-        code = 'API_KEY = "REDACTED_FIXTURE"'
+        code = 'API_KEY = "demo-" + "api-key-fixture"'
         findings = analyzer.analyze(code)
         assert any(f.rule_id == "SEC-003" for f in findings)
 
