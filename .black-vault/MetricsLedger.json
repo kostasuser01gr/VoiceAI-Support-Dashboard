@@ -34,6 +34,12 @@
       "findings_total": 9,
       "risk_open": 5,
       "risk_operator_action": 2
+    },
+    {
+      "date": "2026-06-03T03:13:55Z",
+      "commit": "9f42f0c",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
