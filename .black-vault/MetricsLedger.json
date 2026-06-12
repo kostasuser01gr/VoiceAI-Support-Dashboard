@@ -88,6 +88,12 @@
       "commit": "ffd21e3",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-06-12T03:12:41Z",
+      "commit": "3fa844b",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
