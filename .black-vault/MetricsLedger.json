@@ -154,6 +154,12 @@
       "commit": "caffc79",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-06-23T03:11:37Z",
+      "commit": "aec0c35",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
