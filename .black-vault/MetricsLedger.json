@@ -172,6 +172,12 @@
       "commit": "22e8501",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-06-26T03:11:50Z",
+      "commit": "7de7eeb",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
