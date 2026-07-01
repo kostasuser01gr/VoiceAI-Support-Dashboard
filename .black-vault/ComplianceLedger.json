@@ -1,6 +1,6 @@
 {
   "protocol": "PROJECT_OPS_V13_BLACK_VAULT_ENTERPRISE",
-  "last_audit": "2026-03-16",
+  "last_audit": "2026-07-01T07:25:23Z",
   "commit": "f6854af",
   "controls": [
     {
@@ -74,6 +74,6 @@
       "evidence": "rbac.ts: 95.2%"
     }
   ],
-  "next_audit": "2026-04-16",
+  "next_audit": "2026-08-01",
   "cadence": "monthly"
 }
