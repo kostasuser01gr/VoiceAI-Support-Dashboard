@@ -340,6 +340,12 @@
       "commit": "ebe0cc1",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-07-24T03:07:59Z",
+      "commit": "492a55b",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
