@@ -63,9 +63,9 @@
     "eslint-config-next": "16.1.6",
     "playwright": "^1.58.2",
     "tailwindcss": "^4",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.4",
     "typescript": "^5",
     "vitest": "^4.0.18",
-    "vite": "^7.3.2"
+    "vite": "^8.0.16"
   }
 }
