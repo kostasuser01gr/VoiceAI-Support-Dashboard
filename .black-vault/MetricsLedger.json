@@ -688,6 +688,12 @@
       "commit": "542b32e",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-09-21T02:18:36Z",
+      "commit": "db7746c",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
