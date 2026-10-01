@@ -3,9 +3,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
   "version": 1,
-  "serialNumber": "urn:uuid:00c749c7-9395-484f-8b89-ed6f0546866c",
+  "serialNumber": "urn:uuid:cc26e324-f012-42b3-a34e-54f0554bef31",
   "metadata": {
-    "timestamp": "2026-09-01T06:07:39.269Z",
+    "timestamp": "2026-10-01T06:07:40.456Z",
     "tools": {
       "components": [
         {
@@ -59,7 +59,7 @@
           "type": "library",
           "name": "cyclonedx-library",
           "group": "@cyclonedx",
-          "version": "10.2.0",
+          "version": "10.3.0",
           "author": "Jan Kowalleck",
           "description": "Core functionality of CycloneDX for JavaScript (Node.js or WebBrowser).",
           "licenses": [
