@@ -808,6 +808,12 @@
       "commit": "dd8da95",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-10-11T02:23:58Z",
+      "commit": "b36cb96",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
