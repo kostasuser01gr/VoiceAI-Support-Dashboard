@@ -10,11 +10,20 @@ const ROLE_RANK: Record<SessionRole, number> = {
 };
 
 export function hasRole(
-  currentRole: SessionRole,
+  currentRole: SessionRole | undefined | null,
   requiredRoles: SessionRole[],
 ) {
-  const currentRank = ROLE_RANK[currentRole] ?? 0;
-  return requiredRoles.some((role) => currentRank >= ROLE_RANK[role]);
+  if (!currentRole || typeof currentRole !== "string") {
+    return false;
+  }
+  const currentRank = ROLE_RANK[currentRole];
+  if (currentRank === undefined) {
+    return false;
+  }
+  return requiredRoles.some((role) => {
+    const requiredRank = ROLE_RANK[role];
+    return requiredRank !== undefined && currentRank >= requiredRank;
+  });
 }
 
 export function forbiddenResponse(requestId: string, detailsCode = "RBAC_FORBIDDEN") {
@@ -32,12 +41,12 @@ export function forbiddenResponse(requestId: string, detailsCode = "RBAC_FORBIDD
 }
 
 export function ensureRole(
-  session: SessionData,
+  session: SessionData | null | undefined,
   requiredRoles: SessionRole[],
   requestId: string,
   detailsCode?: string,
 ) {
-  if (!hasRole(session.role, requiredRoles)) {
+  if (!session || !hasRole(session.role, requiredRoles)) {
     return forbiddenResponse(requestId, detailsCode);
   }
 
