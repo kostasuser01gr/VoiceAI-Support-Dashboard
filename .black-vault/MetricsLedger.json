@@ -910,6 +910,12 @@
       "commit": "1fa2f75",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-10-28T02:11:04Z",
+      "commit": "086d7b2",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
