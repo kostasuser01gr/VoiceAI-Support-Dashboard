@@ -1000,6 +1000,12 @@
       "commit": "4576592",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-11-12T02:11:55Z",
+      "commit": "80768ab",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
