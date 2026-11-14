@@ -1012,6 +1012,12 @@
       "commit": "cb8df0c",
       "version": "nightly",
       "notes": "Automated nightly gate run"
+    },
+    {
+      "date": "2026-11-14T02:12:28Z",
+      "commit": "95d2727",
+      "version": "nightly",
+      "notes": "Automated nightly gate run"
     }
   ]
 }
